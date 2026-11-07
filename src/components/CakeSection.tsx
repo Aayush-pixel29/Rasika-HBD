@@ -14,6 +14,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
   const [isWishModalOpen, setIsWishModalOpen] = useState(false);
   const [isSendingWish, setIsSendingWish] = useState(false);
   const [wishDelivered, setWishDelivered] = useState(false);
+  const [sliceCut, setSliceCut] = useState(false);
   const [savedWishes, setSavedWishes] = useState<BirthdayWish[]>(() => {
     try {
       const stored = localStorage.getItem('birthday_wishes');
@@ -302,13 +303,29 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
               </button>
             </>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
               <button
                 onClick={() => setIsWishModalOpen(true)}
                 className="px-5 py-2.5 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-medium text-sm transition-all shadow-sm cursor-pointer flex items-center gap-2"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Make Another Wish</span>
+                <span>Make a Birthday Wish 🎂</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  sound.playSparkleCelebration();
+                  setSliceCut(true);
+                  confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.65 },
+                    colors: ['#F4D2D7', '#D4AF37', '#8B3A4D', '#FFF', '#9CAF88'],
+                  });
+                }}
+                className="px-4 py-2.5 rounded-full text-xs font-semibold bg-[#FAF0DC] hover:bg-[#F5E6CA] border border-[#E8DFC8] text-[#5B2333] transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <span>Cut a Slice 🍰</span>
               </button>
 
               <button
@@ -321,23 +338,22 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
           )}
         </div>
 
-        {/* Saved Wishes Drawer / List */}
-        {savedWishes.length > 0 && (
-          <div className="mt-12 text-left max-w-lg mx-auto bg-white/70 rounded-xl p-5 border border-[#E8DFC8]">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-[#8B3A4D] uppercase tracking-wider">
-                Delivered Wishes ({savedWishes.length})
-              </span>
-              <span className="text-xs text-[#8B6E60]">Saved to Heart</span>
-            </div>
-            <div className="space-y-2">
-              {savedWishes.map((w) => (
-                <div key={w.id} className="text-xs text-[#5B473F] bg-[#FAF7F2] p-2.5 rounded-lg border border-[#E8DFC8]/50 flex items-start justify-between gap-3">
-                  <span className="italic font-handwriting text-base text-[#2D2424]">"{w.wishText}"</span>
-                  <span className="text-[10px] text-[#A8988F] shrink-0 font-mono">{w.blownAt}</span>
-                </div>
-              ))}
-            </div>
+        {/* Cake Slice Reveal Popup */}
+        {sliceCut && (
+          <div className="mt-8 max-w-md mx-auto p-5 rounded-2xl bg-[#FFFDF8] border border-[#E8DFC8] shadow-md animate-float-gentle relative text-center">
+            <span className="text-4xl block mb-2">🍰✨</span>
+            <h4 className="font-serif text-lg font-bold text-[#5B2333]">
+              The First Slice is for You, Anuradha!
+            </h4>
+            <p className="text-xs text-[#6B5E59] mt-1 leading-relaxed">
+              Sweet strawberry layers, vanilla cream, and all the love in the universe. May your life taste as sweet and beautiful as this slice!
+            </p>
+            <button
+              onClick={() => setSliceCut(false)}
+              className="mt-3 text-[11px] text-[#8B3A4D] underline cursor-pointer hover:text-[#5B2333]"
+            >
+              Enjoy the celebration ✦
+            </button>
           </div>
         )}
       </div>
