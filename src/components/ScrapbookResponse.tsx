@@ -4,7 +4,12 @@ import confetti from 'canvas-confetti';
 import { ScrapbookResponseEntry, MoodType } from '../types';
 import { sound } from '../services/soundEffects';
 
-export const ScrapbookResponse: React.FC = () => {
+interface ScrapbookResponseProps {
+  /** When provided, the finale (letter + postman) takes over after sending */
+  onSent?: (sent: { letter: string; senderName: string; moodEmoji: string; stickers: string[] }) => void;
+}
+
+export const ScrapbookResponse: React.FC<ScrapbookResponseProps> = ({ onSent }) => {
   const [selectedMood, setSelectedMood] = useState<MoodType>('touched');
   const [responseLetter, setResponseLetter] = useState('');
   const [favoriteMemory, setFavoriteMemory] = useState('');
@@ -119,6 +124,17 @@ export const ScrapbookResponse: React.FC = () => {
     } catch {}
 
     setIsSending(false);
+
+    if (onSent) {
+      onSent({
+        letter: newEntry.letter,
+        senderName: newEntry.senderName,
+        moodEmoji: newEntry.moodEmoji,
+        stickers: newEntry.stickers,
+      });
+      return;
+    }
+
     setShowCelebrationBanner(true);
     setResponseLetter('');
     setFavoriteMemory('');
@@ -152,8 +168,8 @@ export const ScrapbookResponse: React.FC = () => {
             <span aria-hidden="true">·</span>
             <span>Sent Back to Aayush</span>
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#2D2424] text-balance">
-            How Did This Make You Feel, Anu?
+          <h2 className="font-display text-5xl sm:text-7xl text-[#2D2424] leading-[0.95] text-balance">
+            Now it's <span className="italic text-[#8B3A4D]">your turn</span>, Anu
           </h2>
           <p className="mt-2 text-sm text-[#6B5E59]">
             This space is completely yours. Choose how your heart feels, decorate your scrapbook response with stickers, and send your reply straight back to Aayush.
@@ -383,7 +399,7 @@ export const ScrapbookResponse: React.FC = () => {
         </div>
 
         {/* Previous Saved Responses Wall */}
-        {savedResponses.length > 0 && (
+        {!onSent && savedResponses.length > 0 && (
           <div className="mt-14 space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="font-serif text-xl font-bold text-[#2D2424]">

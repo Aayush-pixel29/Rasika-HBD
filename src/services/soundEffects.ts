@@ -7,66 +7,91 @@ export interface SongInfo {
   title: string;
   artist: string;
   tag: string;
-  spotifyId: string;
+  /** Verified Spotify track ID (checked via Spotify oEmbed). Leave undefined if not verified. */
+  spotifyId?: string;
   spotifyUrl: string;
+  /** Short handwritten note shown while the song plays */
+  dedication: string;
+  /** Vinyl label / sleeve colour */
+  color: string;
 }
 
 export const ANU_SONGS: SongInfo[] = [
   {
     title: 'CO2',
     artist: 'Prateek Kuhad',
-    tag: 'Acoustic / Warm Indie',
-    spotifyId: '2du72cjxORy6pu3latxzUi',
-    spotifyUrl: 'https://open.spotify.com/track/2du72cjxORy6pu3latxzUi',
+    tag: 'Warm Indie',
+    spotifyId: '3hB9lDLyAClYVZivMMl20N',
+    spotifyUrl: 'https://open.spotify.com/track/3hB9lDLyAClYVZivMMl20N',
+    dedication:
+      'Some songs feel like old conversations. This one feels like ours — easy, warm, and never running out of things to say.',
+    color: '#C9746B',
+  },
+  {
+    title: 'Kadhi Tu',
+    artist: 'Hrishikesh Ranade · Mumbai Pune Mumbai',
+    tag: 'Marathi Nostalgia',
+    spotifyUrl: 'https://open.spotify.com/search/Kadhi%20Tu%20Mumbai%20Pune%20Mumbai',
+    dedication:
+      'A little Marathi magic for you, Anu. Soft like rain, simple like those college afternoons when nothing else mattered.',
+    color: '#6F8F72',
+  },
+  {
+    title: 'Kaakan',
+    artist: 'Kaakan (Marathi)',
+    tag: 'Soulful Classic',
+    spotifyUrl: 'https://open.spotify.com/search/Kaakan',
+    dedication:
+      'Soulful and timeless — the kind of melody that stays with you for years. Just like the friendships that start in college.',
+    color: '#B8893B',
+  },
+  {
+    title: 'Paro',
+    artist: 'Paro',
+    tag: 'Late Night Chats',
+    spotifyUrl: 'https://open.spotify.com/search/Paro',
+    dedication:
+      'For all those late-night talks that went on way longer than they should have. I miss those, Anu.',
+    color: '#8B3A4D',
   },
   {
     title: 'Yellow',
     artist: 'Coldplay',
-    tag: 'Look at the Stars ✨',
+    tag: 'Look at the Stars',
     spotifyId: '3AJwUDP919kvQ9QcozQPxg',
     spotifyUrl: 'https://open.spotify.com/track/3AJwUDP919kvQ9QcozQPxg',
-  },
-  {
-    title: 'Sajdaa',
-    artist: 'Rahat Fateh Ali Khan & Shreya Ghoshal',
-    tag: 'Timeless Devotion',
-    spotifyId: '5upmbnXemLfPvs3d2eyHml',
-    spotifyUrl: 'https://open.spotify.com/track/5upmbnXemLfPvs3d2eyHml',
-  },
-  {
-    title: 'Back to Friends',
-    artist: 'Sombr',
-    tag: 'Bittersweet Nostalgia',
-    spotifyId: '7qjZnBKE73H4Oxkopwulqe',
-    spotifyUrl: 'https://open.spotify.com/track/7qjZnBKE73H4Oxkopwulqe',
-  },
-  {
-    title: 'Kadhi Tu',
-    artist: 'Hrishikesh Ranade (Mumbai Pune Mumbai)',
-    tag: 'Sweet Marathi Nostalgia',
-    spotifyId: '2du72cjxORy6pu3latxzUi',
-    spotifyUrl: 'https://open.spotify.com/search/Kadhi%20Tu%20Mumbai%20Pune%20Mumbai',
-  },
-  {
-    title: 'Kaakan',
-    artist: 'Shankar Mahadevan & Neha Rajpal',
-    tag: 'Soulful Marathi Classic',
-    spotifyId: '3AJwUDP919kvQ9QcozQPxg',
-    spotifyUrl: 'https://open.spotify.com/search/Kaakan%20Shankar%20Mahadevan',
-  },
-  {
-    title: 'Paro',
-    artist: 'Nej',
-    tag: 'Late Night Chats',
-    spotifyId: '5upmbnXemLfPvs3d2eyHml',
-    spotifyUrl: 'https://open.spotify.com/search/Paro%20Nej',
+    dedication:
+      '"Look at the stars, look how they shine for you." Today they really do. Happy birthday, Anu ✨',
+    color: '#D9A93C',
   },
   {
     title: 'Aarzu',
-    artist: 'Noor, Khan & Madhurxo / Asim Azhar',
+    artist: 'Aarzu',
     tag: 'College Nostalgia',
-    spotifyId: '7qjZnBKE73H4Oxkopwulqe',
     spotifyUrl: 'https://open.spotify.com/search/Aarzu',
+    dedication:
+      'A small aarzu of mine — that this year we finally meet again, and talk like no time has passed at all.',
+    color: '#7C6A9E',
+  },
+  {
+    title: 'Back to Friends',
+    artist: 'sombr',
+    tag: 'Bittersweet',
+    spotifyId: '7qjZnBKE73H4Oxkopwulqe',
+    spotifyUrl: 'https://open.spotify.com/track/7qjZnBKE73H4Oxkopwulqe',
+    dedication:
+      'For every conversation we never got to finish after college. Here\'s to picking them back up — chai on me.',
+    color: '#4E6E8E',
+  },
+  {
+    title: 'Sajdaa',
+    artist: 'Rahat Fateh Ali Khan, Shankar Mahadevan & Richa Sharma',
+    tag: 'Timeless',
+    spotifyId: '5upmbnXemLfPvs3d2eyHml',
+    spotifyUrl: 'https://open.spotify.com/track/5upmbnXemLfPvs3d2eyHml',
+    dedication:
+      'A classic for a classic. Some melodies never get old — and some people never stop being special.',
+    color: '#5B2333',
   },
 ];
 
