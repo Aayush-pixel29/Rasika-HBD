@@ -7,9 +7,10 @@ export interface SongInfo {
   title: string;
   artist: string;
   tag: string;
-  /** Verified Spotify track ID (checked via Spotify oEmbed) */
   spotifyId: string;
   spotifyUrl: string;
+  /** Direct audio stream for immediate autoplay on user selection */
+  audioUrl: string;
   /** Short handwritten note shown while the song plays */
   dedication: string;
   /** Vinyl label / sleeve colour */
@@ -23,6 +24,7 @@ export const ANU_SONGS: SongInfo[] = [
     tag: 'Warm Indie',
     spotifyId: '3hB9lDLyAClYVZivMMl20N',
     spotifyUrl: 'https://open.spotify.com/track/3hB9lDLyAClYVZivMMl20N',
+    audioUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/3a/2b/9e/3a2b9e23-6381-5513-bfbd-c77a8d82beb0/mzaf_325522060342302711.plus.aac.p.m4a',
     dedication:
       'Some songs feel like old conversations. This one feels like ours — easy, warm, and never running out of things to say.',
     color: '#C9746B',
@@ -33,6 +35,7 @@ export const ANU_SONGS: SongInfo[] = [
     tag: 'Marathi Nostalgia',
     spotifyId: '1Avr9Tt4Av7xoX7cUvYJbA',
     spotifyUrl: 'https://open.spotify.com/track/1Avr9Tt4Av7xoX7cUvYJbA',
+    audioUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/63/be/79/63be7947-0ad1-96fb-1cc7-a050ba52af9a/mzaf_11702007319365555238.plus.aac.p.m4a',
     dedication:
       'A little Marathi magic for you, Anu. Soft like rain, simple like those college afternoons when nothing else mattered.',
     color: '#6F8F72',
@@ -43,16 +46,18 @@ export const ANU_SONGS: SongInfo[] = [
     tag: 'Soulful Classic',
     spotifyId: '2aQS1Wsx14l7jJuIcfbDj6',
     spotifyUrl: 'https://open.spotify.com/track/2aQS1Wsx14l7jJuIcfbDj6',
+    audioUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/63/0c/cc/630ccccd-2371-2506-57eb-b1db3c8ed408/mzaf_1466094542528583128.plus.aac.p.m4a',
     dedication:
       'Soulful and timeless — the kind of melody that stays with you for years. Just like the friendships that start back in school & college.',
     color: '#B8893B',
   },
   {
     title: 'Paro',
-    artist: 'Aditya Rikhari',
+    artist: 'Nej',
     tag: 'Late Night Chats',
     spotifyId: '1cYCjjZ7Grj8tkbtvW7uii',
     spotifyUrl: 'https://open.spotify.com/track/1cYCjjZ7Grj8tkbtvW7uii',
+    audioUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/73/e9/6a/73e96a25-be2e-7ccd-0d9a-7f4726a0ab9a/mzaf_9944694706733457620.plus.aac.p.m4a',
     dedication:
       'For all those late-night talks that went on way longer than they should have. I miss those, Anu.',
     color: '#8B3A4D',
@@ -63,16 +68,18 @@ export const ANU_SONGS: SongInfo[] = [
     tag: 'Look at the Stars',
     spotifyId: '3AJwUDP919kvQ9QcozQPxg',
     spotifyUrl: 'https://open.spotify.com/track/3AJwUDP919kvQ9QcozQPxg',
+    audioUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/66/f3/1a/66f31a76-a6ed-cb4c-f353-23310a7ae9a8/mzaf_10593596652344378873.plus.aac.p.m4a',
     dedication:
       '"Look at the stars, look how they shine for you." Today they really do. Happy birthday, Anu ✨',
     color: '#D9A93C',
   },
   {
     title: 'Aarzu',
-    artist: 'Aarzu',
+    artist: 'Hasan Raheem',
     tag: 'College Nostalgia',
     spotifyId: '6I9tCj9zJ2ArGa8348W8no',
     spotifyUrl: 'https://open.spotify.com/track/6I9tCj9zJ2ArGa8348W8no',
+    audioUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/3f/7a/78/3f7a78a3-ed40-2187-859f-9c634d1bc0fb/mzaf_4074112147232822869.plus.aac.p.m4a',
     dedication:
       'A small aarzu of mine — that this year we finally meet again, and talk like no time has passed at all.',
     color: '#7C6A9E',
@@ -83,6 +90,7 @@ export const ANU_SONGS: SongInfo[] = [
     tag: 'Bittersweet',
     spotifyId: '7qjZnBKE73H4Oxkopwulqe',
     spotifyUrl: 'https://open.spotify.com/track/7qjZnBKE73H4Oxkopwulqe',
+    audioUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/d7/63/7d/d7637dec-cf2d-1455-3398-f1a6340359d0/mzaf_88927986796632454.plus.aac.p.m4a',
     dedication:
       'For every conversation we never got to finish after college. Here\'s to picking them back up — chai on me.',
     color: '#4E6E8E',
@@ -93,6 +101,7 @@ export const ANU_SONGS: SongInfo[] = [
     tag: 'Timeless',
     spotifyId: '5upmbnXemLfPvs3d2eyHml',
     spotifyUrl: 'https://open.spotify.com/track/5upmbnXemLfPvs3d2eyHml',
+    audioUrl: 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/7f/2c/10/7f2c10b3-a0e3-caa4-d9ff-8c39019ecaf8/mzaf_2654668297998312906.plus.aac.p.m4a',
     dedication:
       'A classic for a classic. Some melodies never get old — and some people never stop being special.',
     color: '#5B2333',

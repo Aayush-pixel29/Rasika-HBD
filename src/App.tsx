@@ -91,7 +91,7 @@ export default function App() {
           ) : current.id === 'cake' ? (
             <CakeSection onNext={() => go(2)} />
           ) : current.id === 'memories' ? (
-            <PhotoGallery />
+            <PhotoGallery onNext={() => go(3)} />
           ) : current.id === 'music' ? (
             <MusicDedication onNext={() => go(4)} />
           ) : current.id === 'letter' ? (

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ExternalLink, Play, Pause, Sparkles, Mail } from 'lucide-react';
+import { ExternalLink, Play, Pause, Sparkles, Mail, Volume2, RotateCcw } from 'lucide-react';
 import { ANU_SONGS, SongInfo, sound } from '../services/soundEffects';
 
 /** Typewriter effect for the handwritten dedication note */
@@ -67,20 +67,62 @@ interface MusicDedicationProps {
 }
 
 export const MusicDedication: React.FC<MusicDedicationProps> = ({ onNext }) => {
-  // Start with first song ready
   const [selected, setSelected] = useState<number>(0);
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState<boolean>(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(30);
+
   const sceneRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const song = ANU_SONGS[selected];
   const typed = useTypewriter(song?.dedication ?? '', 22);
 
+  // Play immediately when user chooses a song
   const choose = (i: number) => {
     sound.playChime(560 + i * 20);
     setSelected(i);
-    setPlaying(true);
+    const chosenSong = ANU_SONGS[i];
+
+    if (audioRef.current) {
+      audioRef.current.src = chosenSong.audioUrl;
+      audioRef.current.currentTime = 0;
+      audioRef.current
+        .play()
+        .then(() => {
+          setPlaying(true);
+        })
+        .catch(() => {
+          // If browser still restricts, keep ready
+          setPlaying(false);
+        });
+    }
   };
+
+  // Toggle play/pause on the turntable
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (playing) {
+      audioRef.current.pause();
+      setPlaying(false);
+    } else {
+      sound.playChime(480);
+      audioRef.current
+        .play()
+        .then(() => setPlaying(true))
+        .catch(() => {});
+    }
+  };
+
+  // Cleanup audio when leaving section
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
 
   const onMove = (e: React.MouseEvent) => {
     const r = sceneRef.current?.getBoundingClientRect();
@@ -90,8 +132,30 @@ export const MusicDedication: React.FC<MusicDedicationProps> = ({ onNext }) => {
     setTilt({ x: py * -8, y: px * 10 });
   };
 
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
   return (
     <section className="min-h-[calc(100vh-8rem)] py-8 sm:py-14">
+      {/* Hidden high-fidelity HTML5 audio element for instant playback */}
+      <audio
+        ref={audioRef}
+        src={song?.audioUrl}
+        preload="auto"
+        onTimeUpdate={() => {
+          if (audioRef.current) {
+            setCurrentTime(audioRef.current.currentTime);
+            if (audioRef.current.duration) setDuration(audioRef.current.duration);
+          }
+        }}
+        onEnded={() => setPlaying(false)}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+      />
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Header typography */}
         <div className="text-center mb-8 sm:mb-12">
@@ -103,7 +167,7 @@ export const MusicDedication: React.FC<MusicDedicationProps> = ({ onNext }) => {
             A song <span className="italic text-[#8B3A4D]">for Anu</span>
           </h2>
           <p className="font-handwriting text-2xl sm:text-3xl text-[#8B6E60] mt-2">
-            pick any record — it plays immediately with a note for you ♪
+            tap any record — it plays immediately with a note for you ♪
           </p>
         </div>
 
@@ -147,7 +211,7 @@ export const MusicDedication: React.FC<MusicDedicationProps> = ({ onNext }) => {
                 {/* Platter */}
                 <div className="absolute left-4 top-4 sm:left-7 sm:top-7 w-[215px] h-[215px] sm:w-[276px] sm:h-[276px] rounded-full bg-[#2a2625] shadow-[inset_0_0_0_6px_#3a3433,0_6px_14px_rgba(0,0,0,0.5)] flex items-center justify-center">
                   <AnimatePresence mode="wait">
-                    {song ? (
+                    {song && (
                       <motion.div
                         key={song.title}
                         initial={{ x: -240, opacity: 0, rotate: -90 }}
@@ -162,7 +226,7 @@ export const MusicDedication: React.FC<MusicDedicationProps> = ({ onNext }) => {
                           <Vinyl song={song} spinning={playing} size={200} />
                         </div>
                       </motion.div>
-                    ) : null}
+                    )}
                   </AnimatePresence>
                   {/* spindle */}
                   <div className="absolute w-3 h-3 rounded-full bg-gradient-to-br from-gray-200 to-gray-500 shadow" />
@@ -189,13 +253,12 @@ export const MusicDedication: React.FC<MusicDedicationProps> = ({ onNext }) => {
                 <div className="absolute right-5 bottom-5 sm:right-8 sm:bottom-8 flex flex-col items-end gap-2">
                   <div className="flex items-center gap-1.5">
                     <span className={`w-2 h-2 rounded-full ${playing ? 'bg-[#1DB954] shadow-[0_0_8px_#1DB954]' : 'bg-[#5a5150]'}`} />
-                    <span className="text-[9px] tracking-[0.25em] text-[#E8DFC8]/60 uppercase">AUTO-PLAY</span>
+                    <span className="text-[9px] tracking-[0.25em] text-[#E8DFC8]/60 uppercase">
+                      {playing ? 'PLAYING' : 'READY'}
+                    </span>
                   </div>
                   <button
-                    onClick={() => {
-                      sound.playChime(480);
-                      setPlaying((p) => !p);
-                    }}
+                    onClick={togglePlay}
                     className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-[#e9e3d9] to-[#9d958a] text-[#2D2424] flex items-center justify-center shadow-[0_4px_0_#5f574d] active:translate-y-1 active:shadow-none cursor-pointer"
                     title={playing ? 'Pause' : 'Play'}
                   >
@@ -215,7 +278,7 @@ export const MusicDedication: React.FC<MusicDedicationProps> = ({ onNext }) => {
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-[#5B2333] uppercase tracking-wider">
-                Select Any Record (Tap to Play):
+                Select Any Record (Tap to Play Instantly):
               </span>
               <span className="text-[11px] text-[#8B6E60]">8 Curated Songs</span>
             </div>
@@ -248,7 +311,7 @@ export const MusicDedication: React.FC<MusicDedicationProps> = ({ onNext }) => {
               })}
             </div>
 
-            {/* Dedication note & Spotify Embed */}
+            {/* Dedication note & Player */}
             <AnimatePresence mode="wait">
               {song && (
                 <motion.div
@@ -272,27 +335,36 @@ export const MusicDedication: React.FC<MusicDedicationProps> = ({ onNext }) => {
                     </span>
                   </div>
 
-                  {/* Typewritten message */}
+                  {/* Audio Progress Bar */}
+                  <div className="mt-3 bg-[#FAF7F2] p-2.5 rounded-xl border border-[#E8DFC8]/60 flex items-center gap-3">
+                    <button
+                      onClick={togglePlay}
+                      className="w-8 h-8 rounded-full bg-[#8B3A4D] text-white flex items-center justify-center shrink-0 cursor-pointer shadow-2xs hover:bg-[#6F2B3B]"
+                    >
+                      {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+                    </button>
+
+                    <div className="flex-1">
+                      <div className="w-full bg-[#E8DFC8] h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-[#8B3A4D] h-full transition-all duration-200"
+                          style={{ width: `${(currentTime / (duration || 30)) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <span className="text-[10px] font-mono text-[#8B6E60] shrink-0">
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </span>
+                  </div>
+
+                  {/* Typewritten dedication message */}
                   <p className="font-handwriting text-xl sm:text-2xl text-[#5B2333] leading-snug mt-3 min-h-[4.5rem]">
                     "{typed}"
                     <span className="animate-pulse">|</span>
                   </p>
 
-                  {/* Spotify Embed Player - auto plays with verified track ID */}
-                  <div className="mt-4 rounded-xl overflow-hidden shadow-sm border border-[#E8DFC8]">
-                    <iframe
-                      key={song.spotifyId}
-                      title={`Spotify – ${song.title}`}
-                      src={`https://open.spotify.com/embed/track/${song.spotifyId}?utm_source=generator&autoplay=1&theme=0`}
-                      width="100%"
-                      height="80"
-                      frameBorder={0}
-                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                      loading="eager"
-                    />
-                  </div>
-
-                  <div className="mt-3 flex items-center justify-between gap-3">
+                  <div className="mt-3 pt-3 border-t border-[#E8DFC8]/60 flex flex-wrap items-center justify-between gap-3">
                     <a
                       href={song.spotifyUrl}
                       target="_blank"

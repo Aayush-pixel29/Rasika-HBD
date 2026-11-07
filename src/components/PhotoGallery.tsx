@@ -4,7 +4,11 @@ import { MemoryPhoto } from '../types';
 import { INITIAL_MEMORIES } from '../data/defaultContent';
 import { sound } from '../services/soundEffects';
 
-export const PhotoGallery: React.FC = () => {
+interface PhotoGalleryProps {
+  onNext?: () => void;
+}
+
+export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ onNext }) => {
   const [memories, setMemories] = useState<MemoryPhoto[]>(() => {
     try {
       // Clear legacy broken caches
@@ -308,6 +312,19 @@ export const PhotoGallery: React.FC = () => {
               </div>
             ))}
         </div>
+
+        {/* Continue to Music Button */}
+        {onNext && (
+          <div className="mt-12 text-center">
+            <button
+              onClick={onNext}
+              className="px-6 py-3 rounded-full bg-[#5B2333] hover:bg-[#431723] text-white text-xs tracking-wider uppercase font-semibold shadow-md transition-all cursor-pointer inline-flex items-center gap-2"
+            >
+              <span>Continue to A Song for You</span>
+              <span>→</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Zoom Lightbox Modal */}
