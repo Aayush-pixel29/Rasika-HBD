@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Plus, ZoomIn, RotateCw, MapPin, Calendar, Tag, X, Image as ImageIcon } from 'lucide-react';
+import { Camera, Plus, ZoomIn, RotateCw, MapPin, Calendar, Tag, X, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { MemoryPhoto } from '../types';
 import { INITIAL_MEMORIES } from '../data/defaultContent';
 import { sound } from '../services/soundEffects';
@@ -7,14 +7,16 @@ import { sound } from '../services/soundEffects';
 export const PhotoGallery: React.FC = () => {
   const [memories, setMemories] = useState<MemoryPhoto[]>(() => {
     try {
-      const stored = localStorage.getItem('college_memories');
-      return stored ? JSON.parse(stored) : INITIAL_MEMORIES;
+      const stored = localStorage.getItem('college_memories_v3');
+      if (stored) return JSON.parse(stored);
+      localStorage.setItem('college_memories_v3', JSON.stringify(INITIAL_MEMORIES));
+      return INITIAL_MEMORIES;
     } catch {
       return INITIAL_MEMORIES;
     }
   });
 
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('All');
   const [zoomedPhoto, setZoomedPhoto] = useState<MemoryPhoto | null>(null);
   const [flippedIds, setFlippedIds] = useState<Record<string, boolean>>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -22,12 +24,12 @@ export const PhotoGallery: React.FC = () => {
   // New photo form state
   const [newCaption, setNewCaption] = useState('');
   const [newDate, setNewDate] = useState('College Memory');
-  const [newLocation, setNewLocation] = useState('Our College Spot');
+  const [newLocation, setNewLocation] = useState('Our College Days');
   const [newNote, setNewNote] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [newTapeColor, setNewTapeColor] = useState<'pink' | 'sage' | 'gold' | 'cream'>('pink');
 
-  const tags = ['all', 'College Days', 'Library', 'Dreams', 'Music'];
+  const tags = ['All', 'College Days', 'Anu Special', 'Memories'];
 
   const handleFlip = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -42,20 +44,20 @@ export const PhotoGallery: React.FC = () => {
     sound.playPaperRustle();
     const photo: MemoryPhoto = {
       id: 'mem-' + Date.now(),
-      url: newUrl.trim() || '/src/assets/images/nostalgic_college_memory_1794038531777.jpg',
+      url: newUrl.trim() || '/images/anu_1.jpg',
       caption: newCaption.trim(),
       date: newDate.trim(),
       location: newLocation.trim(),
-      note: newNote.trim() || 'A memory that made college unforgettable.',
-      rotation: (Math.random() * 6 - 3), // -3 to +3 deg
+      note: newNote.trim() || 'A precious memory that made college days unforgettable.',
+      rotation: Math.random() * 6 - 3, // -3 to +3 deg
       tapeColor: newTapeColor,
-      tags: ['College Days'],
+      tags: ['All', 'College Days', 'Anu Special'],
     };
 
     const updated = [photo, ...memories];
     setMemories(updated);
     try {
-      localStorage.setItem('college_memories', JSON.stringify(updated));
+      localStorage.setItem('college_memories_v2', JSON.stringify(updated));
     } catch {
       // ignore
     }
@@ -79,9 +81,14 @@ export const PhotoGallery: React.FC = () => {
     }
   };
 
-  const filteredMemories = activeFilter === 'all'
-    ? memories
-    : memories.filter((m) => m.tags.includes(activeFilter));
+  const filteredMemories =
+    activeFilter === 'All'
+      ? memories
+      : memories.filter((m) => m.tags.includes(activeFilter));
+
+  const totalPhotosPlanned = 10;
+  const currentPhotoCount = memories.length;
+  const remainingSlots = Math.max(0, totalPhotosPlanned - currentPhotoCount);
 
   return (
     <section id="memories" className="py-16 sm:py-24 bg-[#FAF7F2] relative">
@@ -91,16 +98,25 @@ export const PhotoGallery: React.FC = () => {
           <div className="flex items-center justify-center gap-2 text-xs font-medium text-[#8B6E60] tracking-wider uppercase mb-2">
             <span>Memory Lane</span>
             <span aria-hidden="true">·</span>
-            <span>College Scrapbook</span>
+            <span>Anuradha's Polaroid Wall</span>
             <span aria-hidden="true">·</span>
             <span>Tap to Flip</span>
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#2D2424] text-balance">
-            Our Polaroid Keepsake Wall
+            College Memories & Our Dearest Anu
           </h2>
           <p className="mt-2 text-sm text-[#6B5E59]">
-            Every picture has a story. Tap any polaroid to flip it and read the memory written on the back.
+            Back in college we talked for hours about everything. We haven't met since then, but these memories are forever frozen in time. Tap any polaroid to flip it and read the story on the back.
           </p>
+
+          {/* 10-Photo Progress Indicator */}
+          <div className="mt-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FCF9F3] border border-[#E8DFC8] text-xs text-[#5B2333] shadow-2xs">
+            <Camera className="w-3.5 h-3.5 text-[#8B3A4D]" />
+            <span className="font-semibold">{currentPhotoCount} of 10 Polaroids in Collection</span>
+            <span className="text-[#2E5E44] font-medium flex items-center gap-1">
+              <Sparkles className="w-3 h-3" /> Complete Keepsake Album
+            </span>
+          </div>
         </div>
 
         {/* Filter controls & Add button */}
@@ -132,7 +148,7 @@ export const PhotoGallery: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-white bg-[#8B3A4D] hover:bg-[#6F2B3B] rounded-full transition-all shadow-xs cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Pin a New Memory</span>
+            <span>Pin a Polaroid</span>
           </button>
         </div>
 
@@ -167,11 +183,11 @@ export const PhotoGallery: React.FC = () => {
                 />
 
                 {/* Polaroid Frame */}
-                <div className="bg-white p-4 pt-5 pb-5 rounded-sm polaroid-shadow border border-[#E8DFC8]/60 relative min-h-[380px] flex flex-col justify-between">
+                <div className="bg-white p-4 pt-5 pb-5 rounded-sm polaroid-shadow border border-[#E8DFC8]/60 relative min-h-[400px] flex flex-col justify-between">
                   {!isFlipped ? (
                     /* Front side */
                     <>
-                      <div className="relative aspect-4/3 w-full bg-[#FAF7F2] rounded-xs overflow-hidden mb-4 border border-black/5">
+                      <div className="relative aspect-4/5 w-full bg-[#FAF7F2] rounded-xs overflow-hidden mb-3 border border-black/5">
                         <img
                           src={mem.url}
                           alt={mem.caption}
@@ -196,7 +212,7 @@ export const PhotoGallery: React.FC = () => {
 
                           <button
                             onClick={(e) => handleFlip(mem.id, e)}
-                            className="flex items-center gap-1 text-[#8B3A4D] hover:underline cursor-pointer"
+                            className="flex items-center gap-1 text-[#8B3A4D] hover:underline cursor-pointer font-medium"
                           >
                             <RotateCw className="w-3 h-3" />
                             <span>Flip note</span>
@@ -210,9 +226,9 @@ export const PhotoGallery: React.FC = () => {
                       <div>
                         <div className="flex items-center justify-between border-b border-[#E8DFC8] pb-2 mb-3">
                           <span className="text-[11px] uppercase tracking-wider text-[#8B6E60] font-sans">
-                            Memory Journal
+                            College Memory Note
                           </span>
-                          <span className="font-handwriting text-sm text-[#8B3A4D]">To My Old Friend</span>
+                          <span className="font-handwriting text-sm text-[#8B3A4D]">To Anu (Anuradha)</span>
                         </div>
                         <p className="font-handwriting text-xl sm:text-2xl text-[#2D2424] leading-relaxed">
                           "{mem.note}"
@@ -223,7 +239,7 @@ export const PhotoGallery: React.FC = () => {
                         {mem.location && (
                           <div className="flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
-                            <span className="truncate max-w-[120px]">{mem.location}</span>
+                            <span className="truncate max-w-[130px]">{mem.location}</span>
                           </div>
                         )}
                         <button
@@ -240,6 +256,32 @@ export const PhotoGallery: React.FC = () => {
               </div>
             );
           })}
+
+          {/* Reserved slots for the next 5 photos */}
+          {remainingSlots > 0 &&
+            [...Array(remainingSlots)].map((_, idx) => (
+              <div
+                key={`placeholder-${idx}`}
+                onClick={() => {
+                  sound.playChime(500);
+                  setIsAddModalOpen(true);
+                }}
+                className="border-2 border-dashed border-[#D6C7B2] rounded-xl p-6 min-h-[380px] flex flex-col items-center justify-center text-center bg-white/40 hover:bg-white/70 transition-all cursor-pointer group"
+              >
+                <div className="w-12 h-12 rounded-full bg-[#FAF0DC] flex items-center justify-center text-[#8B6E60] mb-3 group-hover:scale-110 transition-transform">
+                  <Camera className="w-6 h-6 text-[#A67C37]" />
+                </div>
+                <h4 className="font-serif text-sm font-bold text-[#5B2333]">
+                  Polaroid #{currentPhotoCount + idx + 1}
+                </h4>
+                <p className="text-xs text-[#8B6E60] mt-1 max-w-[180px]">
+                  Reserved for Anu's next batch of photos. Tap to pin now!
+                </p>
+                <span className="mt-3 text-[11px] text-[#8B3A4D] font-medium group-hover:underline">
+                  + Add Photo Here
+                </span>
+              </div>
+            ))}
         </div>
       </div>
 
@@ -250,7 +292,7 @@ export const PhotoGallery: React.FC = () => {
           onClick={() => setZoomedPhoto(null)}
         >
           <div
-            className="bg-white p-5 sm:p-7 rounded-lg max-w-2xl w-full border border-[#E8DFC8] shadow-2xl relative"
+            className="bg-white p-5 sm:p-7 rounded-lg max-w-2xl w-full border border-[#E8DFC8] shadow-2xl relative max-h-[95vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -260,12 +302,12 @@ export const PhotoGallery: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
 
-            <div className="aspect-4/3 w-full bg-[#FAF7F2] rounded-xs overflow-hidden mb-4">
+            <div className="aspect-4/5 max-h-[60vh] w-full bg-[#FAF7F2] rounded-xs overflow-hidden mb-4 flex items-center justify-center">
               <img
                 src={zoomedPhoto.url}
                 alt={zoomedPhoto.caption}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             </div>
 
@@ -273,7 +315,7 @@ export const PhotoGallery: React.FC = () => {
               <h3 className="font-handwriting text-2xl sm:text-3xl text-[#2D2424]">
                 {zoomedPhoto.caption}
               </h3>
-              <p className="text-sm text-[#5B473F] bg-[#FAF7F2] p-3 rounded-lg border border-[#E8DFC8]/60 font-sans">
+              <p className="text-sm text-[#5B473F] bg-[#FAF7F2] p-3 rounded-lg border border-[#E8DFC8]/60 font-sans leading-relaxed">
                 {zoomedPhoto.note}
               </p>
               <div className="flex items-center justify-between text-xs text-[#8B6E60] pt-2">
@@ -297,10 +339,10 @@ export const PhotoGallery: React.FC = () => {
             </button>
 
             <h3 className="font-serif text-2xl font-bold text-[#2D2424] mb-1">
-              Pin a College Memory
+              Pin a Memory for Anu
             </h3>
             <p className="text-xs text-[#7A6B63] mb-5">
-              Add a photo, caption, and a secret note for the back of the polaroid.
+              Upload a photo or paste a link, add a caption, and write a secret note for the back of the polaroid.
             </p>
 
             <form onSubmit={handleAddMemory} className="space-y-4">
@@ -313,7 +355,7 @@ export const PhotoGallery: React.FC = () => {
                     type="text"
                     value={newUrl}
                     onChange={(e) => setNewUrl(e.target.value)}
-                    placeholder="https://... or upload local file"
+                    placeholder="/images/anu_1.jpg or paste link"
                     className="flex-1 p-2 text-xs rounded-lg border border-[#E8DFC8] bg-white text-[#2D2424]"
                   />
                   <label className="px-3 py-2 bg-[#F2ECE4] hover:bg-[#EBE2D7] text-[#5B2333] text-xs font-medium rounded-lg cursor-pointer flex items-center gap-1">
@@ -337,7 +379,7 @@ export const PhotoGallery: React.FC = () => {
                   type="text"
                   value={newCaption}
                   onChange={(e) => setNewCaption(e.target.value)}
-                  placeholder="e.g. 2 AM library giggles & cold coffee"
+                  placeholder="e.g. Endless conversations & radiant laughs"
                   className="w-full p-2.5 text-xs rounded-lg border border-[#E8DFC8] bg-white text-[#2D2424]"
                   required
                 />
@@ -346,25 +388,25 @@ export const PhotoGallery: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-[#5B473F] mb-1">
-                    Date / Semester
+                    Date / Time
                   </label>
                   <input
                     type="text"
                     value={newDate}
                     onChange={(e) => setNewDate(e.target.value)}
-                    placeholder="e.g. 4th Semester"
+                    placeholder="e.g. College Memories"
                     className="w-full p-2 text-xs rounded-lg border border-[#E8DFC8] bg-white text-[#2D2424]"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#5B473F] mb-1">
-                    Spot / Location
+                    Spot / Memory
                   </label>
                   <input
                     type="text"
                     value={newLocation}
                     onChange={(e) => setNewLocation(e.target.value)}
-                    placeholder="e.g. Campus Rooftop"
+                    placeholder="e.g. College Days"
                     className="w-full p-2 text-xs rounded-lg border border-[#E8DFC8] bg-white text-[#2D2424]"
                   />
                 </div>
@@ -378,7 +420,7 @@ export const PhotoGallery: React.FC = () => {
                   rows={3}
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="What was the story behind this memory? What makes you smile when you remember it?"
+                  placeholder="What made this memory or conversation with Anu unforgettable?"
                   className="w-full p-2.5 text-xs rounded-lg border border-[#E8DFC8] bg-white text-[#2D2424] resize-none"
                 />
               </div>

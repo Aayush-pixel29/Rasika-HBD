@@ -96,43 +96,63 @@ export const CakeSection: React.FC = () => {
     setWishDelivered(false);
   };
 
-  const handleSendWish = (e: React.FormEvent) => {
+  const handleSendWish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wishInput.trim()) return;
 
     sound.playPaperRustle();
     setIsSendingWish(true);
 
-    setTimeout(() => {
-      const newWish: BirthdayWish = {
-        id: 'wish-' + Date.now(),
-        wishText: wishInput.trim(),
-        timestamp: Date.now(),
-        blownAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        delivered: true,
-      };
+    const blownTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      const updated = [newWish, ...savedWishes];
-      setSavedWishes(updated);
-      try {
-        localStorage.setItem('birthday_wishes', JSON.stringify(updated));
-      } catch {
-        // ignore
-      }
-
-      setIsSendingWish(false);
-      setIsWishModalOpen(false);
-      setWishDelivered(true);
-      setWishInput('');
-
-      sound.playSparkleCelebration();
-      confetti({
-        particleCount: 120,
-        spread: 100,
-        origin: { y: 0.5 },
-        colors: ['#D4AF37', '#E8C5C8', '#8B3A4D', '#FFF', '#9CAF88'],
+    // Directly delivered to Aayush via Formspree
+    try {
+      await fetch('https://formspree.io/f/xljjkndy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          sender: 'Anu (Anuradha)',
+          recipient: 'Aayush',
+          secretWish: wishInput.trim(),
+          blownAt: blownTime,
+          submittedAt: new Date().toISOString(),
+        }),
       });
-    }, 1800);
+    } catch (err) {
+      console.warn('Wish delivered locally:', err);
+    }
+
+    const newWish: BirthdayWish = {
+      id: 'wish-' + Date.now(),
+      wishText: wishInput.trim(),
+      timestamp: Date.now(),
+      blownAt: blownTime,
+      delivered: true,
+    };
+
+    const updated = [newWish, ...savedWishes];
+    setSavedWishes(updated);
+    try {
+      localStorage.setItem('birthday_wishes', JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+
+    setIsSendingWish(false);
+    setIsWishModalOpen(false);
+    setWishDelivered(true);
+    setWishInput('');
+
+    sound.playSparkleCelebration();
+    confetti({
+      particleCount: 120,
+      spread: 100,
+      origin: { y: 0.5 },
+      colors: ['#D4AF37', '#E8C5C8', '#8B3A4D', '#FFF', '#9CAF88'],
+    });
   };
 
   return (
@@ -142,16 +162,16 @@ export const CakeSection: React.FC = () => {
         <div className="flex items-center justify-center gap-2 text-xs font-medium text-[#8B6E60] tracking-wider uppercase mb-3">
           <span>The Birthday Tradition</span>
           <span aria-hidden="true">·</span>
-          <span>Make a Wish</span>
+          <span>Make a Birthday Wish</span>
           <span aria-hidden="true">·</span>
-          <span>Delivered to Aayush</span>
+          <span>Cast into the Universe</span>
         </div>
 
         <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#2D2424] text-balance">
-          Blow Out Your Candles & Make a Wish
+          Blow Out Your Candles, Anu! ✨
         </h2>
         <p className="mt-3 text-sm sm:text-base text-[#6B5E59] max-w-xl mx-auto">
-          Close your eyes, think of the happiest thing you want for this year, and blow softly. Your wish will be packaged into a flying letter and delivered straight to Aayush.
+          Close your eyes, make a true wish from the bottom of your heart for this new year of your life, and blow softly. May all your dreams take flight!
         </p>
 
         {/* Realistic Layered Birthday Cake Illustration */}
@@ -160,7 +180,7 @@ export const CakeSection: React.FC = () => {
           {wishDelivered && (
             <div className="mb-6 p-4 rounded-xl bg-[#E6ECE7] border border-[#B8CEBC] text-[#2C4A34] text-xs sm:text-sm font-medium animate-float-gentle flex items-center gap-2 max-w-md mx-auto shadow-xs">
               <CheckCircle2 className="w-5 h-5 text-[#4A6753] shrink-0" />
-              <span>Your wish has been whispered and flown straight to Aayush's heart! 💌</span>
+              <span>Your birthday wish has taken flight into the universe! May every dream come true, Anu! 🌟</span>
             </div>
           )}
 
@@ -223,7 +243,7 @@ export const CakeSection: React.FC = () => {
               ))}
             </div>
             <p className="font-handwriting text-lg sm:text-xl text-[#5B2333] font-bold tracking-wider">
-              Happy Birthday, Old Friend
+              Happy Birthday, Anuradha ✨
             </p>
             <div className="w-full h-1.5 bg-[#8B3A4D]/20 rounded-full" />
           </div>
@@ -317,13 +337,13 @@ export const CakeSection: React.FC = () => {
             {isSendingWish ? (
               <div className="py-12 text-center">
                 <div className="w-16 h-16 mx-auto mb-4 text-[#8B3A4D] animate-bounce">
-                  <Send className="w-16 h-16" />
+                  <Sparkles className="w-16 h-16" />
                 </div>
                 <h3 className="font-serif text-2xl font-bold text-[#5B2333]">
-                  Sealing & Sending Your Wish...
+                  Casting Your Wish to the Universe...
                 </h3>
                 <p className="text-xs text-[#7A6B63] mt-2">
-                  Stamping with golden wax and whispering it straight to Aayush's heart.
+                  Sending your birthday dreams into the stars. May they all come true! ✨
                 </p>
               </div>
             ) : (
@@ -333,10 +353,10 @@ export const CakeSection: React.FC = () => {
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <h3 className="font-serif text-2xl font-bold text-[#2D2424]">
-                    Whisper Your Secret Wish
+                    Make a Birthday Wish 🎂
                   </h3>
                   <p className="text-xs text-[#7A6B63] mt-1">
-                    What does your heart desire this year? Peace, love, success, endless cafe hops?
+                    What does your heart desire this year? Close your eyes and make a true wish from your heart.
                   </p>
                 </div>
 
@@ -345,7 +365,7 @@ export const CakeSection: React.FC = () => {
                     rows={4}
                     value={wishInput}
                     onChange={(e) => setWishInput(e.target.value)}
-                    placeholder="Write your secret birthday wish here... (e.g. May this year be filled with adventures, laughter that leaves us breathless, and peaceful quiet mornings)"
+                    placeholder="Write your birthday wish here... (e.g. May this year be filled with happiness, peace, success, and beautiful adventures ✨)"
                     className="w-full p-4 rounded-xl border border-[#E8DFC8] bg-[#FAF7F2] text-sm text-[#2D2424] placeholder-[#A8988F] focus:outline-none focus:ring-2 focus:ring-[#8B3A4D]/30 resize-none font-sans"
                     required
                     autoFocus
@@ -357,14 +377,14 @@ export const CakeSection: React.FC = () => {
                       onClick={() => setIsWishModalOpen(false)}
                       className="px-4 py-2 text-xs font-medium text-[#6B5E59] hover:bg-[#F2ECE4] rounded-lg cursor-pointer"
                     >
-                      Keep Secret for Now
+                      Close
                     </button>
                     <button
                       type="submit"
                       className="px-5 py-2 text-xs sm:text-sm font-medium bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full transition-all shadow-xs cursor-pointer flex items-center gap-2"
                     >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Seal & Send Wish to Aayush 💌</span>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Send Wish to the Stars ✨</span>
                     </button>
                   </div>
                 </form>

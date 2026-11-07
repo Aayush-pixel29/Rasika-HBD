@@ -8,8 +8,10 @@ import { sound } from '../services/soundEffects';
 export const VirtualGifts: React.FC = () => {
   const [gifts, setGifts] = useState<VirtualGift[]>(() => {
     try {
-      const stored = localStorage.getItem('virtual_gifts');
-      return stored ? JSON.parse(stored) : INITIAL_GIFTS;
+      const stored = localStorage.getItem('virtual_gifts_v2');
+      if (stored) return JSON.parse(stored);
+      localStorage.setItem('virtual_gifts_v2', JSON.stringify(INITIAL_GIFTS));
+      return INITIAL_GIFTS;
     } catch {
       return INITIAL_GIFTS;
     }
@@ -35,7 +37,7 @@ export const VirtualGifts: React.FC = () => {
       );
       setGifts(updated);
       try {
-        localStorage.setItem('virtual_gifts', JSON.stringify(updated));
+        localStorage.setItem('virtual_gifts_v2', JSON.stringify(updated));
       } catch {}
 
       setOpenedGift({ ...gift, isOpened: true });
@@ -72,13 +74,13 @@ export const VirtualGifts: React.FC = () => {
             <span aria-hidden="true">·</span>
             <span>Unwrap With Love</span>
             <span aria-hidden="true">·</span>
-            <span>Interactive Gifts</span>
+            <span>For Anu (Anuradha)</span>
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#2D2424] text-balance">
-            Virtual Gift Unwrapping Station
+            Special Birthday Gifts for Anu
           </h2>
           <p className="mt-2 text-sm text-[#6B5E59]">
-            Four carefully prepared presents wrapped in satin ribbons. Tap any box to untie the ribbon and see what's inside.
+            Presents prepared with love — including your college mixtape (ready for your favorite song), your celestial star, and overdue reunion passes. Tap any box to untie the ribbon!
           </p>
         </div>
 
@@ -263,7 +265,7 @@ export const VirtualGifts: React.FC = () => {
                   <Star className="w-8 h-8 fill-amber-300" />
                 </div>
                 <h4 className="font-serif text-xl font-bold text-amber-200">
-                  The "College Best Friend" Constellation
+                  The "Anuradha" Constellation ✨
                 </h4>
                 <p className="text-xs text-slate-300 mt-2 max-w-sm mx-auto">
                   Registered forever in the virtual skies. Coordinates: RA 18h 36m / DEC +38° 47'.

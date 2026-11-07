@@ -3,6 +3,23 @@
  * Zero external audio file dependencies - 100% reliable and lightweight!
  */
 
+export interface SongInfo {
+  title: string;
+  artist: string;
+  tag: string;
+}
+
+export const ANU_SONGS: SongInfo[] = [
+  { title: 'CO2', artist: 'Prateek Kuhad', tag: 'Acoustic / Warm Indie' },
+  { title: 'Kadhi Tu', artist: 'Mumbai Pune Mumbai', tag: 'Sweet Marathi Nostalgia' },
+  { title: 'Kaakan', artist: 'Shankar Mahadevan & Neha Rajpal', tag: 'Soulful Melody' },
+  { title: 'Sajdaa', artist: 'Rahat Fateh Ali Khan & Shreya Ghoshal', tag: 'Timeless Devotion' },
+  { title: 'Yellow', artist: 'Coldplay', tag: 'Look at the Stars' },
+  { title: 'Aarzu', artist: 'Acoustic Serenade', tag: 'College Nostalgia' },
+  { title: 'Back to Friends', artist: 'Sombr', tag: 'Bittersweet Memories' },
+  { title: 'Paro', artist: 'Soft Indie Acoustic', tag: 'Late Night Chats' },
+];
+
 class SoundEngine {
   private ctx: AudioContext | null = null;
   private isBgmPlaying: boolean = false;
@@ -189,17 +206,26 @@ class SoundEngine {
   }
 
   public nextTrack(): number {
-    this.currentTrackIndex = (this.currentTrackIndex + 1) % 3;
+    this.currentTrackIndex = (this.currentTrackIndex + 1) % ANU_SONGS.length;
+    return this.currentTrackIndex;
+  }
+
+  public selectTrack(idx: number): number {
+    this.currentTrackIndex = Math.max(0, Math.min(ANU_SONGS.length - 1, idx));
     return this.currentTrackIndex;
   }
 
   public getTrackName(): string {
-    const tracks = [
-      'Campus Autumn Breeze (Acoustic Chimes)',
-      'Midnight Library Whispers (Lo-Fi Piano)',
-      'To You, Always (Music Box Lullaby)',
-    ];
-    return tracks[this.currentTrackIndex];
+    const song = ANU_SONGS[this.currentTrackIndex % ANU_SONGS.length];
+    return `${song.title} — ${song.artist}`;
+  }
+
+  public getCurrentSong(): SongInfo {
+    return ANU_SONGS[this.currentTrackIndex % ANU_SONGS.length];
+  }
+
+  public getPlaylist(): SongInfo[] {
+    return ANU_SONGS;
   }
 
   private startBgm() {

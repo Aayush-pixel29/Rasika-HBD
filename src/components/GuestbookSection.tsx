@@ -8,8 +8,10 @@ import { sound } from '../services/soundEffects';
 export const GuestbookSection: React.FC = () => {
   const [entries, setEntries] = useState<GuestbookEntry[]>(() => {
     try {
-      const stored = localStorage.getItem('birthday_guestbook');
-      return stored ? JSON.parse(stored) : INITIAL_GUESTBOOK;
+      const stored = localStorage.getItem('birthday_guestbook_v2');
+      if (stored) return JSON.parse(stored);
+      localStorage.setItem('birthday_guestbook_v2', JSON.stringify(INITIAL_GUESTBOOK));
+      return INITIAL_GUESTBOOK;
     } catch {
       return INITIAL_GUESTBOOK;
     }
@@ -17,7 +19,7 @@ export const GuestbookSection: React.FC = () => {
 
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [author, setAuthor] = useState('');
-  const [relationship, setRelationship] = useState('Old College Pal');
+  const [relationship, setRelationship] = useState('College Friend');
   const [message, setMessage] = useState('');
   const [color, setColor] = useState<'yellow' | 'pink' | 'mint' | 'lavender'>('yellow');
   const [sticker, setSticker] = useState('💌');
@@ -29,7 +31,7 @@ export const GuestbookSection: React.FC = () => {
     );
     setEntries(updated);
     try {
-      localStorage.setItem('birthday_guestbook', JSON.stringify(updated));
+      localStorage.setItem('birthday_guestbook_v2', JSON.stringify(updated));
     } catch {}
   };
 
@@ -91,13 +93,13 @@ export const GuestbookSection: React.FC = () => {
             <span aria-hidden="true">·</span>
             <span>Warm Wishes Board</span>
             <span aria-hidden="true">·</span>
-            <span>Leave a Sticky Note</span>
+            <span>For Anu (Anuradha)</span>
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#2D2424] text-balance">
-            Digital Birthday Wishing Board
+            Digital Birthday Wishing Board for Anu
           </h2>
           <p className="mt-2 text-sm text-[#6B5E59]">
-            A wall of pinned sticky notes and loving affirmations from people who appreciate your existence.
+            A wall of pinned sticky notes and loving affirmations for Anuradha. Pin your note to celebrate her!
           </p>
 
           <div className="mt-5">

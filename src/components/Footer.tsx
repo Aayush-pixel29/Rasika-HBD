@@ -14,12 +14,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div>
             <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
               <span className="font-serif text-lg font-bold text-[#5B2333]">
-                To You, Always
+                To Anu, Always
               </span>
               <span className="text-[#C48B9F] text-xs">✦</span>
             </div>
             <p className="text-xs text-[#8B6E60] max-w-sm">
-              Crafted with warm memories from old college halls to celebrate the most extraordinary human.
+              Crafted with warm college memories and heartfelt wishes for Anuradha — until our overdue reunion!
             </p>
           </div>
 

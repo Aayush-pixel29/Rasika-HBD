@@ -21,13 +21,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navItems = [
     { id: 'home', label: 'Celebration' },
-    { id: 'cake', label: 'Cake & Wish' },
-    { id: 'memories', label: 'Memory Lane' },
-    { id: 'letters', label: 'Vintage Letters' },
-    { id: 'capsules', label: 'Time Capsules' },
-    { id: 'gifts', label: 'Virtual Gifts' },
-    { id: 'scrapbook', label: 'Her Response' },
-    { id: 'guestbook', label: 'Guestbook' },
+    { id: 'cake', label: 'Blow Candles' },
+    { id: 'memories', label: "Anu's Photos" },
+    { id: 'letters', label: 'Letters to Anuradha' },
+    { id: 'gifts', label: 'Surprises & Gifts' },
+    { id: 'scrapbook', label: 'Reply to Aayush' },
   ];
 
   const handleToggleMusic = () => {
@@ -58,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-2 group whitespace-nowrap shrink-0"
           >
             <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#5B2333] transition-colors group-hover:text-[#8B3A4D]">
-              To You, Always
+              To Anu, Always
             </span>
             <span className="text-[#C48B9F] text-sm animate-pulse">✦</span>
           </a>

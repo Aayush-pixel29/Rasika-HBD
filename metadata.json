@@ -1,6 +1,6 @@
 {
-  "name": "To You, Always — Aesthetic Birthday Journal",
-  "description": "A romantic scrapbook-style birthday celebration journal with interactive cake, countdown, memories, secret time-capsules, virtual gifts, and personal thoughts tracker.",
+  "name": "To Anu, Always — Happy Birthday Anuradha",
+  "description": "A nostalgic scrapbook-style birthday celebration journal for Anu (Anuradha) with interactive cake, college memories, sealed letters, and heartfelt wishes from Aayush.",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

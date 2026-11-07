@@ -8,7 +8,7 @@ export const ScrapbookResponse: React.FC = () => {
   const [selectedMood, setSelectedMood] = useState<MoodType>('touched');
   const [responseLetter, setResponseLetter] = useState('');
   const [favoriteMemory, setFavoriteMemory] = useState('');
-  const [senderName, setSenderName] = useState('Birthday Girl');
+  const [senderName, setSenderName] = useState('Anu (Anuradha)');
   const [selectedStickers, setSelectedStickers] = useState<string[]>(['🌹', '✨', '💌']);
   const [washiStyle, setWashiStyle] = useState<'pink' | 'sage' | 'gold' | 'cream'>('pink');
   const [isSending, setIsSending] = useState(false);
@@ -57,53 +57,79 @@ export const ScrapbookResponse: React.FC = () => {
     }
   };
 
-  const handleSendResponse = (e: React.FormEvent) => {
+  const handleSendResponse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!responseLetter.trim()) return;
 
     sound.playPaperRustle();
     setIsSending(true);
 
-    setTimeout(() => {
-      const moodObj = moods.find((m) => m.type === selectedMood) || moods[0];
-      const newEntry: ScrapbookResponseEntry = {
-        id: 'resp-' + Date.now(),
-        date: new Date().toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        }),
-        mood: selectedMood,
-        moodLabel: moodObj.label,
-        moodEmoji: moodObj.emoji,
-        letter: responseLetter.trim(),
-        favoriteMemory: favoriteMemory.trim(),
-        stickers: selectedStickers,
-        washiStyle,
-        senderName: senderName.trim() || 'Birthday Girl',
-        timestamp: Date.now(),
-      };
+    const moodObj = moods.find((m) => m.type === selectedMood) || moods[0];
+    const currentDateStr = new Date().toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
 
-      const updated = [newEntry, ...savedResponses];
-      setSavedResponses(updated);
-      try {
-        localStorage.setItem('scrapbook_responses', JSON.stringify(updated));
-      } catch {}
+    const responsePayload = {
+      senderName: senderName.trim() || 'Anu (Anuradha)',
+      recipient: 'Aayush',
+      mood: selectedMood,
+      moodLabel: moodObj.label,
+      letter: responseLetter.trim(),
+      favoriteMemory: favoriteMemory.trim() || 'None mentioned',
+      stickers: selectedStickers.join(', '),
+      washiStyle,
+      date: currentDateStr,
+      submittedAt: new Date().toISOString(),
+    };
 
-      setIsSending(false);
-      setShowCelebrationBanner(true);
-      setResponseLetter('');
-      setFavoriteMemory('');
-
-      // Birthday Cake and Confetti blast animation as explicitly requested!
-      sound.playSparkleCelebration();
-      confetti({
-        particleCount: 140,
-        spread: 100,
-        origin: { y: 0.6 },
-        colors: ['#E8C5C8', '#D4AF37', '#8B3A4D', '#FFF', '#9CAF88'],
+    // Post directly to Aayush's email via Formspree!
+    try {
+      await fetch('https://formspree.io/f/xyeeajzr', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(responsePayload),
       });
-    }, 1500);
+    } catch (err) {
+      console.warn('Response saved locally:', err);
+    }
+
+    const newEntry: ScrapbookResponseEntry = {
+      id: 'resp-' + Date.now(),
+      date: currentDateStr,
+      mood: selectedMood,
+      moodLabel: moodObj.label,
+      moodEmoji: moodObj.emoji,
+      letter: responseLetter.trim(),
+      favoriteMemory: favoriteMemory.trim(),
+      stickers: selectedStickers,
+      washiStyle,
+      senderName: senderName.trim() || 'Anu (Anuradha)',
+      timestamp: Date.now(),
+    };
+
+    const updated = [newEntry, ...savedResponses];
+    setSavedResponses(updated);
+    try {
+      localStorage.setItem('scrapbook_responses', JSON.stringify(updated));
+    } catch {}
+
+    setIsSending(false);
+    setShowCelebrationBanner(true);
+    setResponseLetter('');
+    setFavoriteMemory('');
+
+    sound.playSparkleCelebration();
+    confetti({
+      particleCount: 140,
+      spread: 100,
+      origin: { y: 0.6 },
+      colors: ['#E8C5C8', '#D4AF37', '#8B3A4D', '#FFF', '#9CAF88'],
+    });
   };
 
   const handleDeleteResponse = (id: string) => {
@@ -120,17 +146,17 @@ export const ScrapbookResponse: React.FC = () => {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <div className="flex items-center justify-center gap-2 text-xs font-medium text-[#8B6E60] tracking-wider uppercase mb-2">
-            <span>Your Turn</span>
+            <span>Anu's Corner</span>
             <span aria-hidden="true">·</span>
             <span>Mood Tracker & Digital Reply</span>
             <span aria-hidden="true">·</span>
             <span>Sent Back to Aayush</span>
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#2D2424] text-balance">
-            How Did This Make You Feel?
+            How Did This Make You Feel, Anu?
           </h2>
           <p className="mt-2 text-sm text-[#6B5E59]">
-            This space is completely yours. Pick how your heart feels, decorate your scrapbook page with virtual stickers, and send your reply directly back to me.
+            This space is completely yours. Choose how your heart feels, decorate your scrapbook response with stickers, and send your reply straight back to Aayush.
           </p>
         </div>
 
@@ -141,10 +167,10 @@ export const ScrapbookResponse: React.FC = () => {
               <Cake className="w-6 h-6 animate-bounce" />
             </div>
             <h3 className="font-serif text-xl font-bold text-[#5B2333]">
-              Your Response Has Been Delivered! 💌
+              Anu, Your Response Has Been Delivered! 💌
             </h3>
             <p className="text-xs text-[#7A6B63] mt-1 max-w-md mx-auto">
-              Aayush received your words with an enormous smile. Thank you for making this birthday shared and unforgettable!
+              Aayush received your words with an enormous smile. Can't wait for our long-overdue reunion!
             </p>
             <div className="mt-3">
               <button

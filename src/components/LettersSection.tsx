@@ -7,8 +7,10 @@ import { sound } from '../services/soundEffects';
 export const LettersSection: React.FC = () => {
   const [letters, setLetters] = useState<Letter[]>(() => {
     try {
-      const stored = localStorage.getItem('birthday_letters');
-      return stored ? JSON.parse(stored) : INITIAL_LETTERS;
+      const stored = localStorage.getItem('birthday_letters_v2');
+      if (stored) return JSON.parse(stored);
+      localStorage.setItem('birthday_letters_v2', JSON.stringify(INITIAL_LETTERS));
+      return INITIAL_LETTERS;
     } catch {
       return INITIAL_LETTERS;
     }
@@ -49,7 +51,7 @@ export const LettersSection: React.FC = () => {
     const updated = [letter, ...letters];
     setLetters(updated);
     try {
-      localStorage.setItem('birthday_letters', JSON.stringify(updated));
+      localStorage.setItem('birthday_letters_v2', JSON.stringify(updated));
     } catch {
       // ignore
     }
@@ -69,13 +71,13 @@ export const LettersSection: React.FC = () => {
             <span aria-hidden="true">·</span>
             <span>Wax-Sealed Letters</span>
             <span aria-hidden="true">·</span>
-            <span>From the Heart</span>
+            <span>For Anu (Anuradha)</span>
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#2D2424] text-balance">
-            Sealed Birthday Letters & Wishes
+            Sealed Letters for Anuradha
           </h2>
           <p className="mt-2 text-sm text-[#6B5E59]">
-            Words that don't fade with the years. Tap any wax seal to break it and open the letter inside.
+            Words that don't fade with time. We haven't met since college, but these memories and feelings will always remain true. Tap any wax seal to break it and open the letter inside.
           </p>
         </div>
 

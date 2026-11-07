@@ -4,13 +4,11 @@ import { HeroCountdown } from './components/HeroCountdown';
 import { CakeSection } from './components/CakeSection';
 import { PhotoGallery } from './components/PhotoGallery';
 import { LettersSection } from './components/LettersSection';
-import { SecretCapsules } from './components/SecretCapsules';
 import { VirtualGifts } from './components/VirtualGifts';
 import { ScrapbookResponse } from './components/ScrapbookResponse';
-import { GuestbookSection } from './components/GuestbookSection';
 import { AudioPlayerFloating } from './components/AudioPlayerFloating';
 import { Footer } from './components/Footer';
-import { Cake, Camera, Mail, Clock, Gift, Heart, Sparkles } from 'lucide-react';
+import { Cake, Camera, Mail, Gift, Heart } from 'lucide-react';
 import { sound } from './services/soundEffects';
 
 export default function App() {
@@ -44,29 +42,23 @@ export default function App() {
       />
 
       <main>
-        {/* Hero & Countdown Banner */}
+        {/* Hero Banner for Anu */}
         <HeroCountdown onNavigate={handleNavigate} />
 
-        {/* Interactive Cake & Wish Flight Section */}
+        {/* Interactive Cake & Wish Section */}
         <CakeSection />
 
-        {/* Polaroid Memory Scrapbook Lane */}
+        {/* Polaroid Memory Scrapbook Lane (All 10 Photos) */}
         <PhotoGallery />
 
         {/* Sealed Vintage Letters */}
         <LettersSection />
-
-        {/* Secret Messages Time Capsule (Unlocks throughout the day) */}
-        <SecretCapsules />
 
         {/* Virtual Gift Unwrapping Station */}
         <VirtualGifts />
 
         {/* Mood Tracker & Scrapbook Response (Her Reply Canvas) */}
         <ScrapbookResponse />
-
-        {/* Personal Digital Guestbook Wishing Board */}
-        <GuestbookSection />
       </main>
 
       {/* Floating Ambient Music Modal */}
@@ -80,11 +72,11 @@ export default function App() {
       {/* Clean Editorial Footer */}
       <Footer onNavigate={handleNavigate} />
 
-      {/* Mobile Floating Quick Dock (stays under 15% mobile viewport cap) */}
+      {/* Mobile Floating Quick Dock */}
       <div className="lg:hidden fixed bottom-3 left-4 right-4 z-40 bg-[#FAF7F2]/95 backdrop-blur-md rounded-2xl border border-[#E8DFC8] shadow-lg p-1.5 flex items-center justify-around text-xs">
         <button
           onClick={() => handleNavigate('cake')}
-          className={`flex flex-col items-center py-1 px-2 rounded-xl transition-colors ${
+          className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition-colors ${
             activeTab === 'cake' ? 'text-[#8B3A4D] font-bold bg-[#E8C5C8]/40' : 'text-[#6B5E59]'
           }`}
         >
@@ -94,7 +86,7 @@ export default function App() {
 
         <button
           onClick={() => handleNavigate('memories')}
-          className={`flex flex-col items-center py-1 px-2 rounded-xl transition-colors ${
+          className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition-colors ${
             activeTab === 'memories' ? 'text-[#8B3A4D] font-bold bg-[#E8C5C8]/40' : 'text-[#6B5E59]'
           }`}
         >
@@ -104,7 +96,7 @@ export default function App() {
 
         <button
           onClick={() => handleNavigate('letters')}
-          className={`flex flex-col items-center py-1 px-2 rounded-xl transition-colors ${
+          className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition-colors ${
             activeTab === 'letters' ? 'text-[#8B3A4D] font-bold bg-[#E8C5C8]/40' : 'text-[#6B5E59]'
           }`}
         >
@@ -113,28 +105,18 @@ export default function App() {
         </button>
 
         <button
-          onClick={() => handleNavigate('capsules')}
-          className={`flex flex-col items-center py-1 px-2 rounded-xl transition-colors ${
-            activeTab === 'capsules' ? 'text-[#8B3A4D] font-bold bg-[#E8C5C8]/40' : 'text-[#6B5E59]'
-          }`}
-        >
-          <Clock className="w-4 h-4 mb-0.5" />
-          <span className="text-[10px]">Capsules</span>
-        </button>
-
-        <button
           onClick={() => handleNavigate('gifts')}
-          className={`flex flex-col items-center py-1 px-2 rounded-xl transition-colors ${
+          className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition-colors ${
             activeTab === 'gifts' ? 'text-[#8B3A4D] font-bold bg-[#E8C5C8]/40' : 'text-[#6B5E59]'
           }`}
         >
           <Gift className="w-4 h-4 mb-0.5" />
-          <span className="text-[10px]">Gifts</span>
+          <span className="text-[10px]">Surprises</span>
         </button>
 
         <button
           onClick={() => handleNavigate('scrapbook')}
-          className={`flex flex-col items-center py-1 px-2 rounded-xl transition-colors ${
+          className={`flex flex-col items-center py-1 px-3 rounded-xl transition-colors ${
             activeTab === 'scrapbook' ? 'text-white bg-[#5B2333] shadow-xs' : 'text-[#8B3A4D] font-semibold'
           }`}
         >
@@ -142,6 +124,9 @@ export default function App() {
           <span className="text-[10px]">Reply</span>
         </button>
       </div>
+    </div>
+  );
+}
     </div>
   );
 }
