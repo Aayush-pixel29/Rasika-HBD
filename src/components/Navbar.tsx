@@ -87,35 +87,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Zone 3: Primary Action & Controls */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Music ambient control button */}
-            <button
-              onClick={handleToggleMusic}
-              title={isMusicPlaying ? 'Mute ambient melody' : 'Play ambient acoustic music'}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
-                isMusicPlaying
-                  ? 'bg-[#E8C5C8] text-[#5B2333] shadow-xs'
-                  : 'bg-[#F2ECE4] text-[#6B5E59] hover:bg-[#EBE2D7]'
-              }`}
-            >
-              {isMusicPlaying ? (
-                <>
-                  <Volume2 className="w-3.5 h-3.5 animate-bounce" />
-                  <span className="hidden sm:inline">Playing Melody</span>
-                </>
-              ) : (
-                <>
-                  <VolumeX className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Play Melody</span>
-                </>
-              )}
-            </button>
-
-            {/* Quick Track Switcher Drawer Trigger */}
+            {/* Spotify / Audio Player Trigger */}
             <button
               onClick={onOpenMusicDrawer}
-              title="Dedicated Audio & Mood Station"
-              className="p-2 rounded-full text-[#6B5E59] bg-[#F2ECE4] hover:bg-[#EBE2D7] transition-colors cursor-pointer"
+              title="Open Anuradha's Spotify Mixtape"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#1DB954]/10 hover:bg-[#1DB954]/20 text-[#15803d] border border-[#1DB954]/40 transition-all cursor-pointer whitespace-nowrap shadow-xs"
             >
-              <Music className="w-4 h-4 text-[#8B3A4D]" />
+              <Music className="w-3.5 h-3.5" />
+              <span>Songs for Anu 🎵</span>
             </button>
 
             {/* Quick response CTA */}

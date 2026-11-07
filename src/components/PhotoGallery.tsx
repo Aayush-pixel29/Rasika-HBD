@@ -7,9 +7,26 @@ import { sound } from '../services/soundEffects';
 export const PhotoGallery: React.FC = () => {
   const [memories, setMemories] = useState<MemoryPhoto[]>(() => {
     try {
-      const stored = localStorage.getItem('college_memories_v3');
-      if (stored) return JSON.parse(stored);
-      localStorage.setItem('college_memories_v3', JSON.stringify(INITIAL_MEMORIES));
+      // Clear legacy broken caches
+      localStorage.removeItem('college_memories_v1');
+      localStorage.removeItem('college_memories_v2');
+      localStorage.removeItem('college_memories_v3');
+      localStorage.removeItem('college_memories_v4');
+
+      const stored = localStorage.getItem('college_memories_v5');
+      if (stored) {
+        const parsed: MemoryPhoto[] = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length >= INITIAL_MEMORIES.length) {
+          // Always ensure the default 10 photos use the active bundled image URLs
+          return parsed.map((item, idx) => {
+            if (INITIAL_MEMORIES[idx]) {
+              return { ...item, url: INITIAL_MEMORIES[idx].url };
+            }
+            return item;
+          });
+        }
+      }
+      localStorage.setItem('college_memories_v5', JSON.stringify(INITIAL_MEMORIES));
       return INITIAL_MEMORIES;
     } catch {
       return INITIAL_MEMORIES;
@@ -57,7 +74,7 @@ export const PhotoGallery: React.FC = () => {
     const updated = [photo, ...memories];
     setMemories(updated);
     try {
-      localStorage.setItem('college_memories_v2', JSON.stringify(updated));
+      localStorage.setItem('college_memories_v5', JSON.stringify(updated));
     } catch {
       // ignore
     }
@@ -192,6 +209,14 @@ export const PhotoGallery: React.FC = () => {
                           src={mem.url}
                           alt={mem.caption}
                           referrerPolicy="no-referrer"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (!target.dataset.fallbackTried) {
+                              target.dataset.fallbackTried = 'true';
+                              target.src = `./images/${mem.id.replace('mem-', 'anu_')}.jpg`;
+                            }
+                          }}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                         <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity">
@@ -307,6 +332,13 @@ export const PhotoGallery: React.FC = () => {
                 src={zoomedPhoto.url}
                 alt={zoomedPhoto.caption}
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.dataset.fallbackTried) {
+                    target.dataset.fallbackTried = 'true';
+                    target.src = `./images/${zoomedPhoto.id.replace('mem-', 'anu_')}.jpg`;
+                  }
+                }}
                 className="w-full h-full object-contain"
               />
             </div>

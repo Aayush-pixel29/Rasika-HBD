@@ -7,17 +7,67 @@ export interface SongInfo {
   title: string;
   artist: string;
   tag: string;
+  spotifyId: string;
+  spotifyUrl: string;
 }
 
 export const ANU_SONGS: SongInfo[] = [
-  { title: 'CO2', artist: 'Prateek Kuhad', tag: 'Acoustic / Warm Indie' },
-  { title: 'Kadhi Tu', artist: 'Mumbai Pune Mumbai', tag: 'Sweet Marathi Nostalgia' },
-  { title: 'Kaakan', artist: 'Shankar Mahadevan & Neha Rajpal', tag: 'Soulful Melody' },
-  { title: 'Sajdaa', artist: 'Rahat Fateh Ali Khan & Shreya Ghoshal', tag: 'Timeless Devotion' },
-  { title: 'Yellow', artist: 'Coldplay', tag: 'Look at the Stars' },
-  { title: 'Aarzu', artist: 'Acoustic Serenade', tag: 'College Nostalgia' },
-  { title: 'Back to Friends', artist: 'Sombr', tag: 'Bittersweet Memories' },
-  { title: 'Paro', artist: 'Soft Indie Acoustic', tag: 'Late Night Chats' },
+  {
+    title: 'CO2',
+    artist: 'Prateek Kuhad',
+    tag: 'Acoustic / Warm Indie',
+    spotifyId: '2du72cjxORy6pu3latxzUi',
+    spotifyUrl: 'https://open.spotify.com/track/2du72cjxORy6pu3latxzUi',
+  },
+  {
+    title: 'Yellow',
+    artist: 'Coldplay',
+    tag: 'Look at the Stars ✨',
+    spotifyId: '3AJwUDP919kvQ9QcozQPxg',
+    spotifyUrl: 'https://open.spotify.com/track/3AJwUDP919kvQ9QcozQPxg',
+  },
+  {
+    title: 'Sajdaa',
+    artist: 'Rahat Fateh Ali Khan & Shreya Ghoshal',
+    tag: 'Timeless Devotion',
+    spotifyId: '5upmbnXemLfPvs3d2eyHml',
+    spotifyUrl: 'https://open.spotify.com/track/5upmbnXemLfPvs3d2eyHml',
+  },
+  {
+    title: 'Back to Friends',
+    artist: 'Sombr',
+    tag: 'Bittersweet Nostalgia',
+    spotifyId: '7qjZnBKE73H4Oxkopwulqe',
+    spotifyUrl: 'https://open.spotify.com/track/7qjZnBKE73H4Oxkopwulqe',
+  },
+  {
+    title: 'Kadhi Tu',
+    artist: 'Hrishikesh Ranade (Mumbai Pune Mumbai)',
+    tag: 'Sweet Marathi Nostalgia',
+    spotifyId: '2du72cjxORy6pu3latxzUi',
+    spotifyUrl: 'https://open.spotify.com/search/Kadhi%20Tu%20Mumbai%20Pune%20Mumbai',
+  },
+  {
+    title: 'Kaakan',
+    artist: 'Shankar Mahadevan & Neha Rajpal',
+    tag: 'Soulful Marathi Classic',
+    spotifyId: '3AJwUDP919kvQ9QcozQPxg',
+    spotifyUrl: 'https://open.spotify.com/search/Kaakan%20Shankar%20Mahadevan',
+  },
+  {
+    title: 'Paro',
+    artist: 'Nej',
+    tag: 'Late Night Chats',
+    spotifyId: '5upmbnXemLfPvs3d2eyHml',
+    spotifyUrl: 'https://open.spotify.com/search/Paro%20Nej',
+  },
+  {
+    title: 'Aarzu',
+    artist: 'Noor, Khan & Madhurxo / Asim Azhar',
+    tag: 'College Nostalgia',
+    spotifyId: '7qjZnBKE73H4Oxkopwulqe',
+    spotifyUrl: 'https://open.spotify.com/search/Aarzu',
+  },
 ];
 
 class SoundEngine {

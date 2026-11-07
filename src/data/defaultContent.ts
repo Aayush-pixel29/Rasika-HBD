@@ -1,9 +1,20 @@
 import { MemoryPhoto, Letter, TimeCapsule, VirtualGift, GuestbookEntry } from '../types';
 
+import anu1 from '../assets/images/anu_1.jpg';
+import anu2 from '../assets/images/anu_2.jpg';
+import anu3 from '../assets/images/anu_3.jpg';
+import anu4 from '../assets/images/anu_4.jpg';
+import anu5 from '../assets/images/anu_5.jpg';
+import anu6 from '../assets/images/anu_6.jpg';
+import anu7 from '../assets/images/anu_7.jpg';
+import anu8 from '../assets/images/anu_8.jpg';
+import anu9 from '../assets/images/anu_9.jpg';
+import anu10 from '../assets/images/anu_10.jpg';
+
 export const INITIAL_MEMORIES: MemoryPhoto[] = [
   {
     id: 'mem-1',
-    url: '/images/anu_1.jpg',
+    url: anu1,
     caption: 'The smile that hasn\'t changed a bit',
     date: 'College Memories & Now',
     location: 'College Nostalgia',
@@ -14,7 +25,7 @@ export const INITIAL_MEMORIES: MemoryPhoto[] = [
   },
   {
     id: 'mem-2',
-    url: '/images/anu_2.jpg',
+    url: anu2,
     caption: 'Our forever Anuradha radiance ✨',
     date: 'Unfiltered Joy',
     location: 'Campus Days',
@@ -25,7 +36,7 @@ export const INITIAL_MEMORIES: MemoryPhoto[] = [
   },
   {
     id: 'mem-3',
-    url: '/images/anu_3.jpg',
+    url: anu3,
     caption: 'Late evening chats & quiet warmth',
     date: 'Golden College Years',
     location: 'Campus Nights',
@@ -36,7 +47,7 @@ export const INITIAL_MEMORIES: MemoryPhoto[] = [
   },
   {
     id: 'mem-4',
-    url: '/images/anu_4.jpg',
+    url: anu4,
     caption: 'Timeless grace in black & white',
     date: 'Classic Keepsake',
     location: 'Old Memories',
@@ -47,7 +58,7 @@ export const INITIAL_MEMORIES: MemoryPhoto[] = [
   },
   {
     id: 'mem-5',
-    url: '/images/anu_5.jpg',
+    url: anu5,
     caption: 'To my favorite friend across the miles',
     date: 'Happy Birthday Anuradha',
     location: 'Always Cherished',
@@ -58,7 +69,7 @@ export const INITIAL_MEMORIES: MemoryPhoto[] = [
   },
   {
     id: 'mem-6',
-    url: '/images/anu_6.jpg',
+    url: anu6,
     caption: 'Traditional grace & Marathi charm 🌸',
     date: 'Festive Splendor',
     location: 'Traditional Vibe',
@@ -69,7 +80,7 @@ export const INITIAL_MEMORIES: MemoryPhoto[] = [
   },
   {
     id: 'mem-7',
-    url: '/images/anu_7.jpg',
+    url: anu7,
     caption: 'Cozy thoughts & heartfelt chats',
     date: 'Quiet Moments',
     location: 'Late Night Chats',
@@ -80,7 +91,7 @@ export const INITIAL_MEMORIES: MemoryPhoto[] = [
   },
   {
     id: 'mem-8',
-    url: '/images/anu_8.jpg',
+    url: anu8,
     caption: 'Sunflowers, joy & peaceful energy 🌻',
     date: 'Pure Serenity',
     location: 'Warm Heart',
@@ -91,7 +102,7 @@ export const INITIAL_MEMORIES: MemoryPhoto[] = [
   },
   {
     id: 'mem-9',
-    url: '/images/anu_9.jpg',
+    url: anu9,
     caption: 'Golden hour glow — Always you & sunshine ☀️',
     date: 'Sunny Memories',
     location: 'Bright Days',
@@ -102,7 +113,7 @@ export const INITIAL_MEMORIES: MemoryPhoto[] = [
   },
   {
     id: 'mem-10',
-    url: '/images/anu_10.jpg',
+    url: anu10,
     caption: 'Confidence, warmth & celebrating you ✨',
     date: 'Forever Radiant',
     location: 'College to Forever',
@@ -222,7 +233,7 @@ export const INITIAL_CAPSULES: TimeCapsule[] = [
 export const INITIAL_GIFTS: VirtualGift[] = [
   {
     id: 'gift-1',
-    title: 'Anu\'s Curated Mixtape',
+    title: 'Anu\'s Curated Mixtape on Spotify',
     subtitle: 'CO2 • Kadhi Tu • Kaakan • Sajdaa • Yellow & More',
     boxColor: 'blush',
     ribbonColor: 'crimson',
@@ -230,7 +241,7 @@ export const INITIAL_GIFTS: VirtualGift[] = [
     type: 'mixtape',
     surpriseContent: {
       heading: 'Beloved Songs Dedicated to Anuradha',
-      description: 'The exact songs that match our college memories and late night talks.',
+      description: 'The exact songs that match our college memories and late night talks. Listen directly on Spotify!',
       details: [
         '🎵 CO2 — Prateek Kuhad (Acoustic Warmth)',
         '🎵 Kadhi Tu — Mumbai Pune Mumbai (Sweet Marathi Nostalgia)',
