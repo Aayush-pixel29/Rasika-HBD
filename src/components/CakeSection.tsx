@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Wind, Mic, MicOff, Heart } from 'lucide-react';
+import { Sparkles, Wind, Mic, MicOff, Heart, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sound } from '../services/soundEffects';
 
@@ -8,12 +8,13 @@ interface CakeSectionProps {
   onNext?: () => void;
 }
 
-type CakeStep = 'wish' | 'blow' | 'cut' | 'served';
+type CakeStatus = 'ready' | 'blown' | 'served';
 
 export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
-  const [step, setStep] = useState<CakeStep>('wish');
+  const [status, setStatus] = useState<CakeStatus>('ready');
+  const [isWishModalOpen, setIsWishModalOpen] = useState(false);
   const [wishInput, setWishInput] = useState('');
-  const [isSendingWish, setIsSendingWish] = useState(false);
+  const [isSubmittingWish, setIsSubmittingWish] = useState(false);
   const [isListeningMic, setIsListeningMic] = useState(false);
   const [isCutting, setIsCutting] = useState(false);
 
@@ -24,7 +25,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
     let micStream: MediaStream | null = null;
     let animationFrameId: number;
 
-    if (isListeningMic && step === 'blow') {
+    if (isListeningMic && status === 'ready') {
       navigator.mediaDevices?.getUserMedia({ audio: true }).then((stream) => {
         micStream = stream;
         const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -46,7 +47,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
           const lowFreqAverage = lowFreqSum / 15;
 
           if (lowFreqAverage > 130) {
-            handleBlowCandles();
+            handleAttemptBlow();
             setIsListeningMic(false);
             return;
           }
@@ -63,21 +64,27 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
       if (micStream) micStream.getTracks().forEach((track) => track.stop());
       if (audioContext && audioContext.state !== 'closed') audioContext.close();
     };
-  }, [isListeningMic, step]);
+  }, [isListeningMic, status]);
 
-  // Step 1: Submit Wish Privately to Aayush's Email & Advance to Blow Candles
-  const handleSealWish = async (e: React.FormEvent) => {
+  // When user attempts to blow the candles -> Pop out the Make a Wish modal!
+  const handleAttemptBlow = () => {
+    if (status !== 'ready') return;
+    sound.playChime(600);
+    setIsWishModalOpen(true);
+  };
+
+  // When she enters her wish and confirms -> Submit secretly to email and blow out the candles!
+  const handleWishAndBlow = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wishInput.trim()) return;
 
     sound.playPaperRustle();
-    sound.playChime(640);
-    setIsSendingWish(true);
+    setIsSubmittingWish(true);
 
     const blownTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const wishToSend = wishInput.trim();
 
-    // 100% Private: sent only to Aayush's Formspree endpoint, never displayed on screen
+    // Send wish 100% privately to Aayush's email via Formspree
     try {
       await fetch('https://formspree.io/f/xljjkndy', {
         method: 'POST',
@@ -94,29 +101,19 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
         }),
       });
     } catch (err) {
-      console.warn('Wish sent:', err);
+      console.warn('Wish dispatched:', err);
     }
 
-    setIsSendingWish(false);
-    setWishInput(''); // Clear input so wish text is never visible again
-    setStep('blow');
+    setIsSubmittingWish(false);
+    setIsWishModalOpen(false);
+    setWishInput(''); // Cleared immediately, never shown on page
+    setStatus('blown');
 
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.6 },
-      colors: ['#FFD166', '#EF476F', '#06D6A0', '#118AB2'],
-    });
-  };
-
-  // Step 2: Blow Out Candles
-  const handleBlowCandles = () => {
-    if (step !== 'blow') return;
     sound.playCandleBlow();
-    setIsListeningMic(false);
 
+    // Celebratory confetti shower
     confetti({
-      particleCount: 110,
+      particleCount: 120,
       spread: 90,
       origin: { y: 0.62 },
       colors: ['#E8C5C8', '#F7E7CE', '#C48B9F', '#8B3A4D', '#FFF1F2'],
@@ -124,20 +121,19 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
 
     setTimeout(() => {
       sound.playSparkleCelebration();
-      setStep('cut');
-    }, 1200);
+    }, 800);
   };
 
-  // Step 3: Animated Cake Slicing & Serving onto Porcelain Plate
+  // Step 2: Animated cake slicing & serving onto plate
   const handleCutSlice = () => {
-    if (isCutting || step === 'served') return;
+    if (isCutting || status === 'served') return;
     setIsCutting(true);
     sound.playCakeSlice();
 
     setTimeout(() => {
       sound.playSparkleCelebration();
       setIsCutting(false);
-      setStep('served');
+      setStatus('served');
 
       confetti({
         particleCount: 100,
@@ -155,83 +151,35 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
         
-        {/* Step Indicator Badges */}
-        <div className="flex items-center justify-center gap-2 sm:gap-3 text-xs font-semibold uppercase tracking-wider mb-3">
-          <span className={`px-3 py-1 rounded-full transition-all ${step === 'wish' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
-            1. Make Wish
-          </span>
-          <span className="text-[#8B6E60]/40">→</span>
-          <span className={`px-3 py-1 rounded-full transition-all ${step === 'blow' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
-            2. Blow Candles
-          </span>
-          <span className="text-[#8B6E60]/40">→</span>
-          <span className={`px-3 py-1 rounded-full transition-all ${step === 'cut' || step === 'served' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
-            3. Cut Slice 🍰
-          </span>
+        {/* Category Header */}
+        <div className="flex items-center justify-center gap-2 text-xs font-semibold text-[#8B6E60] tracking-widest uppercase mb-2">
+          <Sparkles className="w-3.5 h-3.5 text-[#8B3A4D]" />
+          <span>Chapter I · The Birthday Tradition</span>
+          <Sparkles className="w-3.5 h-3.5 text-[#8B3A4D]" />
         </div>
 
         {/* Dynamic Title */}
         <h2 className="font-serif text-3xl sm:text-5xl font-bold text-[#2D2424] text-balance">
-          {step === 'wish' && 'Step 1: Make Your Birthday Wish 🎂'}
-          {step === 'blow' && 'Step 2: Now Blow Out Your Candles! 🌬️'}
-          {(step === 'cut' || step === 'served') && 'Step 3: Cut the First Slice for Anuradha 🍰'}
+          {status === 'ready' && 'Blow Out Your Candles, Anu! 🎂'}
+          {status === 'blown' && 'Your Wish has Flown to the Stars! ✨'}
+          {status === 'served' && 'The First Slice is for Anuradha 🍰'}
         </h2>
 
         <p className="mt-2 text-sm sm:text-base text-[#6B5E59] max-w-xl mx-auto">
-          {step === 'wish' && 'Close your eyes, think of what your heart truly desires for this year, and write your wish below.'}
-          {step === 'blow' && 'Your wish has been sealed in secret! Now take a deep breath and blow out the glowing flames.'}
-          {step === 'cut' && 'The candles are out and your wish has taken flight! Tap below to cut your celebratory cake slice.'}
-          {step === 'served' && 'Sweet strawberry cream layers served just for you! May every day of this year be filled with laughter and happiness.'}
+          {status === 'ready' && 'Tap the glowing candles to make your secret birthday wish, take a deep breath, and blow!'}
+          {status === 'blown' && 'Your wish has taken flight! Now cut your celebratory birthday cake slice.'}
+          {status === 'served' && 'Sweet strawberry cream layers made just for you! May this new year bring endless happiness.'}
         </p>
 
         {/* ============================================================== */}
-        {/* STEP 1: WISH INPUT FORM (Required input, no skip option) */}
+        {/* THE LAYERED BIRTHDAY CAKE WITH GLOWING CANDLES */}
         {/* ============================================================== */}
-        <AnimatePresence>
-          {step === 'wish' && (
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              className="mt-6 max-w-md mx-auto bg-white/95 backdrop-blur-md p-5 rounded-2xl border border-[#E8DFC8] shadow-md relative"
-            >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-28 h-5 washi-tape washi-tape-pink rounded-xs opacity-90" />
-              
-              <form onSubmit={handleSealWish} className="space-y-3">
-                <textarea
-                  rows={3}
-                  required
-                  value={wishInput}
-                  onChange={(e) => setWishInput(e.target.value)}
-                  placeholder="Type your secret birthday wish here... (e.g. Happiness, peace, college reunions, success & endless smiles ✨)"
-                  className="w-full p-3.5 rounded-xl border border-[#E8DFC8] bg-[#FAF7F2] text-xs sm:text-sm text-[#2D2424] placeholder-[#A8988F] focus:outline-none focus:ring-2 focus:ring-[#8B3A4D]/30 resize-none font-sans"
-                  autoFocus
-                />
-
-                <div className="flex items-center justify-end pt-1">
-                  <button
-                    type="submit"
-                    disabled={isSendingWish || !wishInput.trim()}
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white text-xs sm:text-sm font-semibold shadow-sm cursor-pointer transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-102"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-[#FFD166]" />
-                    <span>{isSendingWish ? 'Sealing...' : 'Seal Wish & Light Candles →'}</span>
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ============================================================== */}
-        {/* THE LAYERED BIRTHDAY CAKE & INTERACTIVE SLICING STAGE */}
-        {/* ============================================================== */}
-        <div className="mt-8 relative flex flex-col items-center justify-center min-h-[340px]">
+        <div className="mt-10 relative flex flex-col items-center justify-center min-h-[340px]">
           
           {/* Candle Flames & Smoke */}
           <div className="flex items-end justify-center gap-6 sm:gap-10 mb-[-4px] z-20">
             {[0, 1, 2].map((idx) => {
-              const areFlamesActive = step === 'wish' || step === 'blow';
+              const areFlamesActive = status === 'ready';
               return (
                 <div key={idx} className="flex flex-col items-center">
                   {areFlamesActive ? (
@@ -241,9 +189,9 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
                         rotate: [0, -2, 2, -1, 0],
                       }}
                       transition={{ duration: 1.5 + idx * 0.2, repeat: Infinity, ease: 'easeInOut' }}
-                      className="w-4 h-6 sm:w-5 sm:h-7 bg-gradient-to-t from-[#FF7A00] via-[#FFAE00] to-[#FFF6A3] rounded-full shadow-[0_0_15px_#FFAE00] origin-bottom cursor-pointer"
-                      title={step === 'blow' ? 'Click to blow out' : 'Lighted candle'}
-                      onClick={() => step === 'blow' && handleBlowCandles()}
+                      className="w-4 h-6 sm:w-5 sm:h-7 bg-gradient-to-t from-[#FF7A00] via-[#FFAE00] to-[#FFF6A3] rounded-full shadow-[0_0_15px_#FFAE00] origin-bottom cursor-pointer hover:scale-110 transition-transform"
+                      title="Tap to make a wish and blow out"
+                      onClick={handleAttemptBlow}
                     />
                   ) : (
                     <div className="h-6 flex flex-col items-center justify-end">
@@ -275,7 +223,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
             <div className="w-48 sm:w-60 h-16 sm:h-20 bg-[#FFF5EB] rounded-t-2xl border-t-4 border-x border-[#F4D2D7] relative shadow-inner flex flex-col items-center overflow-visible">
               
               {/* Sliced Wedge Gap (visible when sliced) */}
-              {(isCutting || step === 'served') && (
+              {(isCutting || status === 'served') && (
                 <div className="absolute right-8 top-0 w-8 h-full bg-[#E5D7BF] border-x border-[#D8C7AA] shadow-inner opacity-80" />
               )}
 
@@ -300,7 +248,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
             <div className="w-64 sm:w-80 h-20 sm:h-24 bg-[#FAF0DC] rounded-t-xl border-t-4 border-x border-[#E8DFC8] relative shadow-md flex flex-col items-center justify-between p-3 overflow-visible">
               
               {/* Sliced Wedge Gap in bottom tier */}
-              {(isCutting || step === 'served') && (
+              {(isCutting || status === 'served') && (
                 <div className="absolute right-10 top-0 w-10 h-full bg-[#DFCBB0] border-x border-[#CDB89B] shadow-inner opacity-85" />
               )}
 
@@ -323,7 +271,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
           </div>
 
           {/* ============================================================== */}
-          {/* SPECTACULAR ANIMATED HAND SLICING CAKE & SERVING ONTO PLATE */}
+          {/* ANIMATED HAND SLICING CAKE & SERVING ONTO PORCELAIN PLATE */}
           {/* ============================================================== */}
           <AnimatePresence>
             {isCutting && (
@@ -344,21 +292,17 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
               >
                 {/* Hand holding golden cake server with strawberry slice */}
                 <div className="relative flex flex-col items-center">
-                  {/* Elegant sleeve & wrist */}
                   <div className="w-10 h-16 bg-gradient-to-b from-[#F4D2D7] to-[#FFF0F3] rounded-t-full border border-[#E8DFC8] shadow-md -mb-2" />
                   
-                  {/* Hand holding server handle */}
                   <div className="w-7 h-8 bg-[#FFDFC4] rounded-full shadow-sm relative z-10 flex items-center justify-center">
                     <span className="w-2 h-4 bg-[#D4AF37] rounded-full rotate-45" />
                   </div>
 
-                  {/* Golden cake server blade */}
                   <div className="relative">
                     <div 
                       className="w-14 h-24 bg-gradient-to-b from-[#FFD700] via-[#D4AF37] to-[#AA820A] shadow-lg rounded-b-xs"
                       style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}
                     />
-                    {/* The cake slice carried smoothly by server */}
                     <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-10 bg-[#FFF5EB] border border-[#F4D2D7] rounded-xs shadow-sm flex flex-col items-center justify-center text-xs">
                       <span>🍓</span>
                       <div className="w-full h-1 bg-[#F4D2D7]" />
@@ -370,14 +314,13 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
           </AnimatePresence>
 
           {/* ============================================================== */}
-          {/* PORCELAIN SERVING PLATE (Appears in front / beside cake) */}
+          {/* PORCELAIN SERVING PLATE */}
           {/* ============================================================== */}
           <div className="mt-4 sm:mt-6 relative flex flex-col items-center">
             <div className="w-48 sm:w-56 h-14 bg-gradient-to-b from-[#FFFFFF] to-[#F5EFE6] rounded-[50%] border-4 border-[#D4AF37]/50 shadow-[0_10px_25px_rgba(0,0,0,0.15)] flex items-center justify-center relative">
               <div className="w-40 sm:w-46 h-10 rounded-[50%] border border-[#E8DFC8] bg-white flex items-center justify-center">
                 
-                {step === 'served' ? (
-                  /* Sliced Cake Slice Sitting Proudly on Plate */
+                {status === 'served' ? (
                   <motion.div
                     initial={{ scale: 0, y: -20, opacity: 0 }}
                     animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -396,7 +339,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
                   </motion.div>
                 ) : (
                   <span className="text-[10px] text-[#A8988F] font-serif italic tracking-wider">
-                    {step === 'cut' ? 'Waiting for your slice...' : 'Royal Porcelain Plate'}
+                    {status === 'blown' ? 'Waiting for your slice...' : 'Royal Porcelain Plate'}
                   </span>
                 )}
               </div>
@@ -405,17 +348,17 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
         </div>
 
         {/* ============================================================== */}
-        {/* CONTROLS (Blow / Cut Slice / Continue) — NO RELIGHT BUTTON */}
+        {/* CONTROLS (Blow / Cut Slice / Open Album) */}
         {/* ============================================================== */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          {step === 'blow' && (
+          {status === 'ready' && (
             <>
               <button
-                onClick={handleBlowCandles}
+                onClick={handleAttemptBlow}
                 className="px-7 py-3 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-bold text-sm transition-all shadow-lg hover:scale-105 cursor-pointer flex items-center gap-2"
               >
                 <Wind className="w-4 h-4 text-[#FFD166]" />
-                <span>Blow Out the Candles! 🌬️</span>
+                <span>Tap to Blow Out Candles 🌬️</span>
               </button>
 
               <button
@@ -441,7 +384,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
             </>
           )}
 
-          {step === 'cut' && (
+          {status === 'blown' && (
             <button
               onClick={handleCutSlice}
               disabled={isCutting}
@@ -451,19 +394,19 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
             </button>
           )}
 
-          {step === 'served' && onNext && (
+          {status === 'served' && onNext && (
             <button
               onClick={onNext}
-              className="px-8 py-3 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-bold text-sm transition-all shadow-lg hover:scale-105 cursor-pointer flex items-center gap-2"
+              className="px-8 py-3.5 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-bold text-sm transition-all shadow-xl hover:scale-105 cursor-pointer flex items-center gap-2 border border-white/20"
             >
               <Sparkles className="w-4 h-4 text-[#FFD166]" />
-              <span>Open Anuradha's Sky Tower Keepsake Album →</span>
+              <span>Open Anuradha's Sky Keepsake Album →</span>
             </button>
           )}
         </div>
 
         {/* Served Slice Celebration Card */}
-        {step === 'served' && (
+        {status === 'served' && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -479,6 +422,63 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
           </motion.div>
         )}
       </div>
+
+      {/* ============================================================== */}
+      {/* POP-OUT MODAL: MAKE A WISH FIRST! (Appears when blowing candles) */}
+      {/* ============================================================== */}
+      <AnimatePresence>
+        {isWishModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-[#FCF9F3] rounded-3xl max-w-md w-full p-6 sm:p-8 border-2 border-[#D4AF37]/50 shadow-2xl relative"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setIsWishModalOpen(false)}
+                className="absolute top-4 right-4 p-1 rounded-full text-[#8B6E60] hover:text-[#2D2424] hover:bg-black/5 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="text-center mb-4">
+                <span className="text-4xl block mb-2">🎂✨</span>
+                <h3 className="font-serif text-2xl font-bold text-[#2D2424]">
+                  Make a Wish First!
+                </h3>
+                <p className="text-xs text-[#7A6B63] mt-1">
+                  Before blowing out your candles, close your eyes and write what your heart truly desires for this year.
+                </p>
+              </div>
+
+              <form onSubmit={handleWishAndBlow} className="space-y-4">
+                <textarea
+                  rows={3}
+                  required
+                  value={wishInput}
+                  onChange={(e) => setWishInput(e.target.value)}
+                  placeholder="Type your secret birthday wish here... (e.g. Happiness, peace, college reunions, success & endless laughs ✨)"
+                  className="w-full p-3.5 rounded-xl border border-[#E8DFC8] bg-white text-xs sm:text-sm text-[#2D2424] placeholder-[#A8988F] focus:outline-none focus:ring-2 focus:ring-[#8B3A4D]/30 resize-none font-sans"
+                  autoFocus
+                />
+
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="submit"
+                    disabled={isSubmittingWish || !wishInput.trim()}
+                    className="w-full py-3 rounded-full bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white text-xs sm:text-sm font-bold shadow-md cursor-pointer transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-102"
+                  >
+                    <Wind className="w-4 h-4 text-[#FFD166]" />
+                    <span>{isSubmittingWish ? 'Sealing Wish...' : 'Seal Wish & Blow Out Candles! 🌬️'}</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };
