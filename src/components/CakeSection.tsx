@@ -4,7 +4,11 @@ import confetti from 'canvas-confetti';
 import { sound } from '../services/soundEffects';
 import { BirthdayWish } from '../types';
 
-export const CakeSection: React.FC = () => {
+interface CakeSectionProps {
+  onNext?: () => void;
+}
+
+export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
   const [candlesBlown, setCandlesBlown] = useState(false);
   const [wishInput, setWishInput] = useState('');
   const [isWishModalOpen, setIsWishModalOpen] = useState(false);
@@ -178,9 +182,20 @@ export const CakeSection: React.FC = () => {
         <div className="mt-12 relative flex flex-col items-center justify-center min-h-[320px]">
           {/* Wish delivery flight animation if just sent */}
           {wishDelivered && (
-            <div className="mb-6 p-4 rounded-xl bg-[#E6ECE7] border border-[#B8CEBC] text-[#2C4A34] text-xs sm:text-sm font-medium animate-float-gentle flex items-center gap-2 max-w-md mx-auto shadow-xs">
-              <CheckCircle2 className="w-5 h-5 text-[#4A6753] shrink-0" />
-              <span>Your birthday wish has taken flight into the universe! May every dream come true, Anu! 🌟</span>
+            <div className="mb-6 p-5 rounded-2xl bg-[#E6ECE7] border border-[#B8CEBC] text-[#2C4A34] text-xs sm:text-sm font-medium animate-float-gentle flex flex-col items-center gap-2 max-w-md mx-auto shadow-xs">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-[#4A6753] shrink-0" />
+                <span>Your birthday wish has taken flight into the universe! May every dream come true, Anu! 🌟</span>
+              </div>
+              {onNext && (
+                <button
+                  onClick={onNext}
+                  className="mt-2 px-5 py-2 rounded-full bg-[#2C4A34] hover:bg-[#1E3324] text-white text-xs font-semibold cursor-pointer shadow-xs transition-all flex items-center gap-1.5"
+                >
+                  <span>Continue to Our Memories</span>
+                  <span>→</span>
+                </button>
+              )}
             </div>
           )}
 

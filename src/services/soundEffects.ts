@@ -7,8 +7,8 @@ export interface SongInfo {
   title: string;
   artist: string;
   tag: string;
-  /** Verified Spotify track ID (checked via Spotify oEmbed). Leave undefined if not verified. */
-  spotifyId?: string;
+  /** Verified Spotify track ID (checked via Spotify oEmbed) */
+  spotifyId: string;
   spotifyUrl: string;
   /** Short handwritten note shown while the song plays */
   dedication: string;
@@ -31,25 +31,28 @@ export const ANU_SONGS: SongInfo[] = [
     title: 'Kadhi Tu',
     artist: 'Hrishikesh Ranade · Mumbai Pune Mumbai',
     tag: 'Marathi Nostalgia',
-    spotifyUrl: 'https://open.spotify.com/search/Kadhi%20Tu%20Mumbai%20Pune%20Mumbai',
+    spotifyId: '1Avr9Tt4Av7xoX7cUvYJbA',
+    spotifyUrl: 'https://open.spotify.com/track/1Avr9Tt4Av7xoX7cUvYJbA',
     dedication:
       'A little Marathi magic for you, Anu. Soft like rain, simple like those college afternoons when nothing else mattered.',
     color: '#6F8F72',
   },
   {
     title: 'Kaakan',
-    artist: 'Kaakan (Marathi)',
+    artist: 'Shankar Mahadevan & Neha Rajpal',
     tag: 'Soulful Classic',
-    spotifyUrl: 'https://open.spotify.com/search/Kaakan',
+    spotifyId: '2aQS1Wsx14l7jJuIcfbDj6',
+    spotifyUrl: 'https://open.spotify.com/track/2aQS1Wsx14l7jJuIcfbDj6',
     dedication:
-      'Soulful and timeless — the kind of melody that stays with you for years. Just like the friendships that start in college.',
+      'Soulful and timeless — the kind of melody that stays with you for years. Just like the friendships that start back in school & college.',
     color: '#B8893B',
   },
   {
     title: 'Paro',
-    artist: 'Paro',
+    artist: 'Aditya Rikhari',
     tag: 'Late Night Chats',
-    spotifyUrl: 'https://open.spotify.com/search/Paro',
+    spotifyId: '1cYCjjZ7Grj8tkbtvW7uii',
+    spotifyUrl: 'https://open.spotify.com/track/1cYCjjZ7Grj8tkbtvW7uii',
     dedication:
       'For all those late-night talks that went on way longer than they should have. I miss those, Anu.',
     color: '#8B3A4D',
@@ -68,7 +71,8 @@ export const ANU_SONGS: SongInfo[] = [
     title: 'Aarzu',
     artist: 'Aarzu',
     tag: 'College Nostalgia',
-    spotifyUrl: 'https://open.spotify.com/search/Aarzu',
+    spotifyId: '6I9tCj9zJ2ArGa8348W8no',
+    spotifyUrl: 'https://open.spotify.com/track/6I9tCj9zJ2ArGa8348W8no',
     dedication:
       'A small aarzu of mine — that this year we finally meet again, and talk like no time has passed at all.',
     color: '#7C6A9E',
@@ -85,7 +89,7 @@ export const ANU_SONGS: SongInfo[] = [
   },
   {
     title: 'Sajdaa',
-    artist: 'Rahat Fateh Ali Khan, Shankar Mahadevan & Richa Sharma',
+    artist: 'Rahat Fateh Ali Khan & Shreya Ghoshal',
     tag: 'Timeless',
     spotifyId: '5upmbnXemLfPvs3d2eyHml',
     spotifyUrl: 'https://open.spotify.com/track/5upmbnXemLfPvs3d2eyHml',
