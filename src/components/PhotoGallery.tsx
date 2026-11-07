@@ -279,6 +279,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ onNext }) => {
                               src={currentMemory.url}
                               alt={currentMemory.caption}
                               loading="lazy"
+                              decoding="async"
                               onError={(e) => {
                                 const target = e.currentTarget;
                                 if (!target.dataset.fallbackTried) {
@@ -371,8 +372,10 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ onNext }) => {
                       
                       {currentMemory.videoUrl ? (
                         <video
+                          key={currentMemory.videoUrl}
                           src={getMediaUrl(currentMemory.videoUrl)}
                           autoPlay={isVideoPlaying}
+                          preload="metadata"
                           loop
                           muted={isVideoMuted}
                           playsInline

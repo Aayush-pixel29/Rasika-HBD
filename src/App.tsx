@@ -72,10 +72,10 @@ export default function App() {
       <AnimatePresence mode="wait">
         <motion.main
           key={sent ? 'finale' : current.id}
-          initial={{ opacity: 0, y: 30, filter: 'blur(4px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, y: -30, filter: 'blur(4px)' }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className={step > 0 && !sent ? 'pt-14 sm:pt-16 pb-24 sm:pb-28' : ''}
         >
           {sent ? (
