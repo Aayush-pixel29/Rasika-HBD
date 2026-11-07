@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Wind, CheckCircle2, Heart, Mic, MicOff, RotateCcw } from 'lucide-react';
+import { Sparkles, Wind, Mic, MicOff, Heart } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sound } from '../services/soundEffects';
 
@@ -8,10 +8,10 @@ interface CakeSectionProps {
   onNext?: () => void;
 }
 
-type CakePhase = 'wish' | 'blow' | 'cut' | 'served';
+type CakeStep = 'wish' | 'blow' | 'cut' | 'served';
 
 export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
-  const [phase, setPhase] = useState<CakePhase>('wish');
+  const [step, setStep] = useState<CakeStep>('wish');
   const [wishInput, setWishInput] = useState('');
   const [isSendingWish, setIsSendingWish] = useState(false);
   const [isListeningMic, setIsListeningMic] = useState(false);
@@ -24,7 +24,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
     let micStream: MediaStream | null = null;
     let animationFrameId: number;
 
-    if (isListeningMic && phase === 'blow') {
+    if (isListeningMic && step === 'blow') {
       navigator.mediaDevices?.getUserMedia({ audio: true }).then((stream) => {
         micStream = stream;
         const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -63,19 +63,21 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
       if (micStream) micStream.getTracks().forEach((track) => track.stop());
       if (audioContext && audioContext.state !== 'closed') audioContext.close();
     };
-  }, [isListeningMic, phase]);
+  }, [isListeningMic, step]);
 
-  // Step 1: Seal Wish & Advance to Blow Candles
-  const handleSealWish = async (e?: React.FormEvent) => {
-    e?.preventDefault();
+  // Step 1: Submit Wish Privately to Aayush's Email & Advance to Blow Candles
+  const handleSealWish = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!wishInput.trim()) return;
+
     sound.playPaperRustle();
     sound.playChime(640);
     setIsSendingWish(true);
 
     const blownTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const finalWish = wishInput.trim() || 'A secret, beautiful birthday wish for happiness, peace, and great adventures ✨';
+    const wishToSend = wishInput.trim();
 
-    // Delivered safely and privately to Aayush via Formspree
+    // 100% Private: sent only to Aayush's Formspree endpoint, never displayed on screen
     try {
       await fetch('https://formspree.io/f/xljjkndy', {
         method: 'POST',
@@ -86,17 +88,18 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
         body: JSON.stringify({
           sender: 'Anu (Anuradha)',
           recipient: 'Aayush',
-          secretWish: finalWish,
+          secretWish: wishToSend,
           blownAt: blownTime,
           submittedAt: new Date().toISOString(),
         }),
       });
     } catch (err) {
-      console.warn('Wish sent locally:', err);
+      console.warn('Wish sent:', err);
     }
 
     setIsSendingWish(false);
-    setPhase('blow');
+    setWishInput(''); // Clear input so wish text is never visible again
+    setStep('blow');
 
     confetti({
       particleCount: 50,
@@ -106,9 +109,9 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
     });
   };
 
-  // Step 2: Blow Out Candles & Advance to Cake Slice
+  // Step 2: Blow Out Candles
   const handleBlowCandles = () => {
-    if (phase !== 'blow') return;
+    if (step !== 'blow') return;
     sound.playCandleBlow();
     setIsListeningMic(false);
 
@@ -121,113 +124,98 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
 
     setTimeout(() => {
       sound.playSparkleCelebration();
-      setPhase('cut');
+      setStep('cut');
     }, 1200);
   };
 
-  // Step 3: Trigger the Animated Hand Slicing Cake & Serving onto Plate
+  // Step 3: Animated Cake Slicing & Serving onto Porcelain Plate
   const handleCutSlice = () => {
-    if (isCutting || phase === 'served') return;
+    if (isCutting || step === 'served') return;
     setIsCutting(true);
     sound.playCakeSlice();
 
-    // After animation sequence completes, mark as served
     setTimeout(() => {
       sound.playSparkleCelebration();
       setIsCutting(false);
-      setPhase('served');
+      setStep('served');
 
       confetti({
-        particleCount: 90,
-        spread: 80,
-        origin: { y: 0.65 },
+        particleCount: 100,
+        spread: 85,
+        origin: { y: 0.62 },
         colors: ['#F4D2D7', '#D4AF37', '#8B3A4D', '#FFF', '#9CAF88'],
       });
     }, 2400);
   };
 
-  const handleResetCeremony = () => {
-    sound.playChime(500);
-    setPhase('wish');
-    setIsCutting(false);
-  };
-
   return (
-    <section id="cake" className="py-14 sm:py-20 bg-[#FCF9F3]/80 border-y border-[#E8DFC8]/70 relative overflow-hidden">
-      {/* Decorative background aura */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-[#F4D2D7]/20 via-[#FAF0DC]/40 to-[#FCE181]/15 rounded-full blur-3xl pointer-events-none" />
+    <section id="cake" className="py-12 sm:py-20 bg-[#FCF9F3]/90 border-y border-[#E8DFC8]/70 relative overflow-hidden">
+      {/* Decorative ambient aura */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-gradient-to-tr from-[#F4D2D7]/25 via-[#FAF0DC]/45 to-[#FCE181]/20 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
         
         {/* Step Indicator Badges */}
         <div className="flex items-center justify-center gap-2 sm:gap-3 text-xs font-semibold uppercase tracking-wider mb-3">
-          <span className={`px-3 py-1 rounded-full transition-all ${phase === 'wish' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
+          <span className={`px-3 py-1 rounded-full transition-all ${step === 'wish' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
             1. Make Wish
           </span>
           <span className="text-[#8B6E60]/40">→</span>
-          <span className={`px-3 py-1 rounded-full transition-all ${phase === 'blow' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
+          <span className={`px-3 py-1 rounded-full transition-all ${step === 'blow' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
             2. Blow Candles
           </span>
           <span className="text-[#8B6E60]/40">→</span>
-          <span className={`px-3 py-1 rounded-full transition-all ${phase === 'cut' || phase === 'served' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
+          <span className={`px-3 py-1 rounded-full transition-all ${step === 'cut' || step === 'served' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
             3. Cut Slice 🍰
           </span>
         </div>
 
-        {/* Dynamic Title based on Phase */}
+        {/* Dynamic Title */}
         <h2 className="font-serif text-3xl sm:text-5xl font-bold text-[#2D2424] text-balance">
-          {phase === 'wish' && 'Step 1: Whisper Your Secret Wish 🎂'}
-          {phase === 'blow' && 'Step 2: Now Blow Out Your Candles! 🌬️'}
-          {(phase === 'cut' || phase === 'served') && 'Step 3: Cut the First Slice for Anuradha 🍰'}
+          {step === 'wish' && 'Step 1: Make Your Birthday Wish 🎂'}
+          {step === 'blow' && 'Step 2: Now Blow Out Your Candles! 🌬️'}
+          {(step === 'cut' || step === 'served') && 'Step 3: Cut the First Slice for Anuradha 🍰'}
         </h2>
 
         <p className="mt-2 text-sm sm:text-base text-[#6B5E59] max-w-xl mx-auto">
-          {phase === 'wish' && 'Close your eyes, think of what your heart truly desires this year, and seal it into the stars.'}
-          {phase === 'blow' && 'Your wish is locked! Take a deep breath, make that wish true, and blow out the glowing flames.'}
-          {phase === 'cut' && 'The candles are out and your wishes have flown! Tap below to cut the cake and serve the first slice.'}
-          {phase === 'served' && 'Sweet strawberry layers served just for you! May this new year bring endless happiness and smiles.'}
+          {step === 'wish' && 'Close your eyes, think of what your heart truly desires for this year, and write your wish below.'}
+          {step === 'blow' && 'Your wish has been sealed in secret! Now take a deep breath and blow out the glowing flames.'}
+          {step === 'cut' && 'The candles are out and your wish has taken flight! Tap below to cut your celebratory cake slice.'}
+          {step === 'served' && 'Sweet strawberry cream layers served just for you! May every day of this year be filled with laughter and happiness.'}
         </p>
 
-        {/* STEP 1: WISH INPUT FORM (Shown when phase === 'wish') */}
+        {/* ============================================================== */}
+        {/* STEP 1: WISH INPUT FORM (Required input, no skip option) */}
+        {/* ============================================================== */}
         <AnimatePresence>
-          {phase === 'wish' && (
+          {step === 'wish' && (
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className="mt-6 max-w-md mx-auto bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-[#E8DFC8] shadow-md relative"
+              className="mt-6 max-w-md mx-auto bg-white/95 backdrop-blur-md p-5 rounded-2xl border border-[#E8DFC8] shadow-md relative"
             >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-5 washi-tape washi-tape-pink rounded-xs opacity-90" />
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-28 h-5 washi-tape washi-tape-pink rounded-xs opacity-90" />
               
               <form onSubmit={handleSealWish} className="space-y-3">
                 <textarea
                   rows={3}
+                  required
                   value={wishInput}
                   onChange={(e) => setWishInput(e.target.value)}
-                  placeholder="Whisper your secret birthday wish here... (e.g., Peace, love, happiness, college reunions & endless laughs ✨)"
+                  placeholder="Type your secret birthday wish here... (e.g. Happiness, peace, college reunions, success & endless smiles ✨)"
                   className="w-full p-3.5 rounded-xl border border-[#E8DFC8] bg-[#FAF7F2] text-xs sm:text-sm text-[#2D2424] placeholder-[#A8988F] focus:outline-none focus:ring-2 focus:ring-[#8B3A4D]/30 resize-none font-sans"
                   autoFocus
                 />
 
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWishInput('A secret wish held close to my heart ✨');
-                      handleSealWish();
-                    }}
-                    className="text-xs text-[#8B6E60] hover:text-[#5B2333] underline cursor-pointer"
-                  >
-                    Keep it secret in my heart
-                  </button>
-
+                <div className="flex items-center justify-end pt-1">
                   <button
                     type="submit"
-                    disabled={isSendingWish}
-                    className="w-full sm:w-auto px-5 py-2 rounded-full bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white text-xs font-semibold shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                    disabled={isSendingWish || !wishInput.trim()}
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white text-xs sm:text-sm font-semibold shadow-sm cursor-pointer transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-102"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>{isSendingWish ? 'Sealing...' : 'Seal My Wish & Light Candles →'}</span>
+                    <Sparkles className="w-3.5 h-3.5 text-[#FFD166]" />
+                    <span>{isSendingWish ? 'Sealing...' : 'Seal Wish & Light Candles →'}</span>
                   </button>
                 </div>
               </form>
@@ -243,7 +231,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
           {/* Candle Flames & Smoke */}
           <div className="flex items-end justify-center gap-6 sm:gap-10 mb-[-4px] z-20">
             {[0, 1, 2].map((idx) => {
-              const areFlamesActive = phase === 'wish' || phase === 'blow';
+              const areFlamesActive = step === 'wish' || step === 'blow';
               return (
                 <div key={idx} className="flex flex-col items-center">
                   {areFlamesActive ? (
@@ -254,8 +242,8 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
                       }}
                       transition={{ duration: 1.5 + idx * 0.2, repeat: Infinity, ease: 'easeInOut' }}
                       className="w-4 h-6 sm:w-5 sm:h-7 bg-gradient-to-t from-[#FF7A00] via-[#FFAE00] to-[#FFF6A3] rounded-full shadow-[0_0_15px_#FFAE00] origin-bottom cursor-pointer"
-                      title={phase === 'blow' ? 'Click to blow out' : 'Lighted candle'}
-                      onClick={() => phase === 'blow' && handleBlowCandles()}
+                      title={step === 'blow' ? 'Click to blow out' : 'Lighted candle'}
+                      onClick={() => step === 'blow' && handleBlowCandles()}
                     />
                   ) : (
                     <div className="h-6 flex flex-col items-center justify-end">
@@ -287,7 +275,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
             <div className="w-48 sm:w-60 h-16 sm:h-20 bg-[#FFF5EB] rounded-t-2xl border-t-4 border-x border-[#F4D2D7] relative shadow-inner flex flex-col items-center overflow-visible">
               
               {/* Sliced Wedge Gap (visible when sliced) */}
-              {(isCutting || phase === 'served') && (
+              {(isCutting || step === 'served') && (
                 <div className="absolute right-8 top-0 w-8 h-full bg-[#E5D7BF] border-x border-[#D8C7AA] shadow-inner opacity-80" />
               )}
 
@@ -312,7 +300,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
             <div className="w-64 sm:w-80 h-20 sm:h-24 bg-[#FAF0DC] rounded-t-xl border-t-4 border-x border-[#E8DFC8] relative shadow-md flex flex-col items-center justify-between p-3 overflow-visible">
               
               {/* Sliced Wedge Gap in bottom tier */}
-              {(isCutting || phase === 'served') && (
+              {(isCutting || step === 'served') && (
                 <div className="absolute right-10 top-0 w-10 h-full bg-[#DFCBB0] border-x border-[#CDB89B] shadow-inner opacity-85" />
               )}
 
@@ -335,18 +323,18 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
           </div>
 
           {/* ============================================================== */}
-          {/* ANIMATED HAND SLICING CAKE & SERVING ONTO PORCELAIN PLATE */}
+          {/* SPECTACULAR ANIMATED HAND SLICING CAKE & SERVING ONTO PLATE */}
           {/* ============================================================== */}
           <AnimatePresence>
             {isCutting && (
               <motion.div
                 className="absolute z-40 pointer-events-none"
-                initial={{ opacity: 0, x: 140, y: -80, rotate: 25 }}
+                initial={{ opacity: 0, x: 150, y: -90, rotate: 28 }}
                 animate={{
                   opacity: [0, 1, 1, 1, 0],
-                  x: [140, 50, 40, -110, -140],
-                  y: [-80, -10, -50, 60, 80],
-                  rotate: [25, 5, -8, -12, 0],
+                  x: [150, 50, 35, -100, -130],
+                  y: [-90, -15, -55, 55, 75],
+                  rotate: [28, 6, -8, -12, 0],
                 }}
                 transition={{
                   duration: 2.3,
@@ -354,12 +342,12 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
                   ease: 'easeInOut',
                 }}
               >
-                {/* Hand holding golden cake knife / server with strawberry slice */}
+                {/* Hand holding golden cake server with strawberry slice */}
                 <div className="relative flex flex-col items-center">
-                  {/* Delicate sleeve & wrist */}
+                  {/* Elegant sleeve & wrist */}
                   <div className="w-10 h-16 bg-gradient-to-b from-[#F4D2D7] to-[#FFF0F3] rounded-t-full border border-[#E8DFC8] shadow-md -mb-2" />
                   
-                  {/* Hand holding handle */}
+                  {/* Hand holding server handle */}
                   <div className="w-7 h-8 bg-[#FFDFC4] rounded-full shadow-sm relative z-10 flex items-center justify-center">
                     <span className="w-2 h-4 bg-[#D4AF37] rounded-full rotate-45" />
                   </div>
@@ -370,7 +358,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
                       className="w-14 h-24 bg-gradient-to-b from-[#FFD700] via-[#D4AF37] to-[#AA820A] shadow-lg rounded-b-xs"
                       style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}
                     />
-                    {/* The cake slice resting on the knife */}
+                    {/* The cake slice carried smoothly by server */}
                     <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-10 bg-[#FFF5EB] border border-[#F4D2D7] rounded-xs shadow-sm flex flex-col items-center justify-center text-xs">
                       <span>🍓</span>
                       <div className="w-full h-1 bg-[#F4D2D7]" />
@@ -385,11 +373,11 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
           {/* PORCELAIN SERVING PLATE (Appears in front / beside cake) */}
           {/* ============================================================== */}
           <div className="mt-4 sm:mt-6 relative flex flex-col items-center">
-            <div className="w-48 sm:w-56 h-14 bg-gradient-to-b from-[#FFFFFF] to-[#F5EFE6] rounded-[50%] border-4 border-[#D4AF37]/40 shadow-[0_10px_25px_rgba(0,0,0,0.15)] flex items-center justify-center relative">
+            <div className="w-48 sm:w-56 h-14 bg-gradient-to-b from-[#FFFFFF] to-[#F5EFE6] rounded-[50%] border-4 border-[#D4AF37]/50 shadow-[0_10px_25px_rgba(0,0,0,0.15)] flex items-center justify-center relative">
               <div className="w-40 sm:w-46 h-10 rounded-[50%] border border-[#E8DFC8] bg-white flex items-center justify-center">
                 
-                {phase === 'served' ? (
-                  /* Sliced Cake Slice Sitting on Plate */
+                {step === 'served' ? (
+                  /* Sliced Cake Slice Sitting Proudly on Plate */
                   <motion.div
                     initial={{ scale: 0, y: -20, opacity: 0 }}
                     animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -398,18 +386,17 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
                     onClick={() => sound.playSparkleCelebration()}
                   >
                     <div className="relative">
-                      {/* Strawberry & cream top */}
                       <span className="text-2xl sm:text-3xl block filter drop-shadow-md animate-bounce">
                         🍰
                       </span>
                     </div>
                     <span className="text-[11px] font-bold text-[#8B3A4D] bg-[#FFF0F3] px-2.5 py-0.5 rounded-full border border-[#F4D2D7] shadow-xs">
-                      Anu's Slice ✨
+                      Anu's Slice 🍓✨
                     </span>
                   </motion.div>
                 ) : (
                   <span className="text-[10px] text-[#A8988F] font-serif italic tracking-wider">
-                    {phase === 'cut' ? 'Ready for your slice...' : 'Royal Porcelain Plate'}
+                    {step === 'cut' ? 'Waiting for your slice...' : 'Royal Porcelain Plate'}
                   </span>
                 )}
               </div>
@@ -418,20 +405,10 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
         </div>
 
         {/* ============================================================== */}
-        {/* PHASE CONTROLS (Blow / Cut Slice / Relight) */}
+        {/* CONTROLS (Blow / Cut Slice / Continue) — NO RELIGHT BUTTON */}
         {/* ============================================================== */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          {phase === 'wish' && (
-            <button
-              onClick={() => handleSealWish()}
-              className="px-6 py-2.5 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-semibold text-sm transition-all shadow-md cursor-pointer flex items-center gap-2"
-            >
-              <Sparkles className="w-4 h-4 text-[#FFD166]" />
-              <span>Seal Birthday Wish & Continue →</span>
-            </button>
-          )}
-
-          {phase === 'blow' && (
+          {step === 'blow' && (
             <>
               <button
                 onClick={handleBlowCandles}
@@ -464,7 +441,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
             </>
           )}
 
-          {phase === 'cut' && (
+          {step === 'cut' && (
             <button
               onClick={handleCutSlice}
               disabled={isCutting}
@@ -474,31 +451,19 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
             </button>
           )}
 
-          {phase === 'served' && (
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {onNext && (
-                <button
-                  onClick={onNext}
-                  className="px-8 py-3 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-bold text-sm transition-all shadow-lg hover:scale-105 cursor-pointer flex items-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4 text-[#FFD166]" />
-                  <span>Open Princess Sky Tower Album →</span>
-                </button>
-              )}
-
-              <button
-                onClick={handleResetCeremony}
-                className="px-4 py-2.5 rounded-full text-xs font-medium bg-white border border-[#E8DFC8] text-[#6B5E59] hover:bg-[#FAF7F2] transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Relight & Repeat</span>
-              </button>
-            </div>
+          {step === 'served' && onNext && (
+            <button
+              onClick={onNext}
+              className="px-8 py-3 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-bold text-sm transition-all shadow-lg hover:scale-105 cursor-pointer flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4 text-[#FFD166]" />
+              <span>Open Anuradha's Sky Tower Keepsake Album →</span>
+            </button>
           )}
         </div>
 
         {/* Served Slice Celebration Card */}
-        {phase === 'served' && (
+        {step === 'served' && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
