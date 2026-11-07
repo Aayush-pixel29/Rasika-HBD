@@ -251,6 +251,55 @@ class SoundEngine {
     }
   }
 
+// Soft cake slicing sound followed by a delicate celebration chime
+  public playCakeSlice() {
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+
+      // Soft swoosh of the knife
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.18);
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.sin((i / bufferSize) * Math.PI);
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(800, now);
+      filter.frequency.exponentialRampToValueAtTime(300, now + 0.18);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.18 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+      noise.start(now);
+      noise.stop(now + 0.19);
+
+      // Delicate plate chime
+      const osc = this.ctx.createOscillator();
+      const oscGain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now + 0.2);
+      osc.frequency.exponentialRampToValueAtTime(1320, now + 0.45);
+      oscGain.gain.setValueAtTime(0.001, now);
+      oscGain.gain.setValueAtTime(0.15 * this.volume, now + 0.2);
+      oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+      osc.connect(oscGain);
+      oscGain.connect(this.ctx.destination);
+      osc.start(now + 0.2);
+      osc.stop(now + 0.65);
+    } catch {
+      // ignore
+    }
+  }
+
   // Magical sparkle melody for celebration or wish flight
   public playSparkleCelebration() {
     try {

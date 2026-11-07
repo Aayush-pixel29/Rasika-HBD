@@ -3,6 +3,8 @@ export interface MemoryPhoto {
   url: string;
   mediaType?: 'image' | 'video';
   videoUrl?: string;
+  videoCaption?: string;
+  videoNote?: string;
   caption: string;
   date: string;
   location?: string;

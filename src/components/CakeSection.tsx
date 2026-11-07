@@ -1,30 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Wind, Send, CheckCircle2, Heart, Mic, MicOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Sparkles, Wind, CheckCircle2, Heart, Mic, MicOff, RotateCcw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sound } from '../services/soundEffects';
-import { BirthdayWish } from '../types';
 
 interface CakeSectionProps {
   onNext?: () => void;
 }
 
-export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
-  const [candlesBlown, setCandlesBlown] = useState(false);
-  const [wishInput, setWishInput] = useState('');
-  const [isWishModalOpen, setIsWishModalOpen] = useState(false);
-  const [isSendingWish, setIsSendingWish] = useState(false);
-  const [wishDelivered, setWishDelivered] = useState(false);
-  const [sliceCut, setSliceCut] = useState(false);
-  const [savedWishes, setSavedWishes] = useState<BirthdayWish[]>(() => {
-    try {
-      const stored = localStorage.getItem('birthday_wishes');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+type CakePhase = 'wish' | 'blow' | 'cut' | 'served';
 
+export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
+  const [phase, setPhase] = useState<CakePhase>('wish');
+  const [wishInput, setWishInput] = useState('');
+  const [isSendingWish, setIsSendingWish] = useState(false);
   const [isListeningMic, setIsListeningMic] = useState(false);
+  const [isCutting, setIsCutting] = useState(false);
 
   // Microphone blow detection
   useEffect(() => {
@@ -33,7 +24,7 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
     let micStream: MediaStream | null = null;
     let animationFrameId: number;
 
-    if (isListeningMic && !candlesBlown) {
+    if (isListeningMic && phase === 'blow') {
       navigator.mediaDevices?.getUserMedia({ audio: true }).then((stream) => {
         micStream = stream;
         const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -48,7 +39,6 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
         const checkAudio = () => {
           if (!analyser) return;
           analyser.getByteFrequencyData(dataArray);
-          // Look for low frequency rushing air sound
           let lowFreqSum = 0;
           for (let i = 0; i < 15; i++) {
             lowFreqSum += dataArray[i];
@@ -73,44 +63,19 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
       if (micStream) micStream.getTracks().forEach((track) => track.stop());
       if (audioContext && audioContext.state !== 'closed') audioContext.close();
     };
-  }, [isListeningMic, candlesBlown]);
+  }, [isListeningMic, phase]);
 
-  const handleBlowCandles = () => {
-    if (candlesBlown) return;
-    sound.playCandleBlow();
-    setCandlesBlown(true);
-    setIsListeningMic(false);
-
-    // Confetti fanfare
-    confetti({
-      particleCount: 100,
-      spread: 90,
-      origin: { y: 0.65 },
-      colors: ['#E8C5C8', '#F7E7CE', '#C48B9F', '#8B3A4D', '#FFF1F2'],
-    });
-
-    setTimeout(() => {
-      sound.playSparkleCelebration();
-      setIsWishModalOpen(true);
-    }, 1200);
-  };
-
-  const handleRelightCandles = () => {
-    sound.playChime(600);
-    setCandlesBlown(false);
-    setWishDelivered(false);
-  };
-
-  const handleSendWish = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!wishInput.trim()) return;
-
+  // Step 1: Seal Wish & Advance to Blow Candles
+  const handleSealWish = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     sound.playPaperRustle();
+    sound.playChime(640);
     setIsSendingWish(true);
 
     const blownTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const finalWish = wishInput.trim() || 'A secret, beautiful birthday wish for happiness, peace, and great adventures ✨';
 
-    // Directly delivered to Aayush via Formspree
+    // Delivered safely and privately to Aayush via Formspree
     try {
       await fetch('https://formspree.io/f/xljjkndy', {
         method: 'POST',
@@ -121,164 +86,359 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
         body: JSON.stringify({
           sender: 'Anu (Anuradha)',
           recipient: 'Aayush',
-          secretWish: wishInput.trim(),
+          secretWish: finalWish,
           blownAt: blownTime,
           submittedAt: new Date().toISOString(),
         }),
       });
     } catch (err) {
-      console.warn('Wish delivered locally:', err);
-    }
-
-    const newWish: BirthdayWish = {
-      id: 'wish-' + Date.now(),
-      wishText: wishInput.trim(),
-      timestamp: Date.now(),
-      blownAt: blownTime,
-      delivered: true,
-    };
-
-    const updated = [newWish, ...savedWishes];
-    setSavedWishes(updated);
-    try {
-      localStorage.setItem('birthday_wishes', JSON.stringify(updated));
-    } catch {
-      // ignore
+      console.warn('Wish sent locally:', err);
     }
 
     setIsSendingWish(false);
-    setIsWishModalOpen(false);
-    setWishDelivered(true);
-    setWishInput('');
+    setPhase('blow');
 
-    sound.playSparkleCelebration();
     confetti({
-      particleCount: 120,
-      spread: 100,
-      origin: { y: 0.5 },
-      colors: ['#D4AF37', '#E8C5C8', '#8B3A4D', '#FFF', '#9CAF88'],
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.6 },
+      colors: ['#FFD166', '#EF476F', '#06D6A0', '#118AB2'],
     });
   };
 
+  // Step 2: Blow Out Candles & Advance to Cake Slice
+  const handleBlowCandles = () => {
+    if (phase !== 'blow') return;
+    sound.playCandleBlow();
+    setIsListeningMic(false);
+
+    confetti({
+      particleCount: 110,
+      spread: 90,
+      origin: { y: 0.62 },
+      colors: ['#E8C5C8', '#F7E7CE', '#C48B9F', '#8B3A4D', '#FFF1F2'],
+    });
+
+    setTimeout(() => {
+      sound.playSparkleCelebration();
+      setPhase('cut');
+    }, 1200);
+  };
+
+  // Step 3: Trigger the Animated Hand Slicing Cake & Serving onto Plate
+  const handleCutSlice = () => {
+    if (isCutting || phase === 'served') return;
+    setIsCutting(true);
+    sound.playCakeSlice();
+
+    // After animation sequence completes, mark as served
+    setTimeout(() => {
+      sound.playSparkleCelebration();
+      setIsCutting(false);
+      setPhase('served');
+
+      confetti({
+        particleCount: 90,
+        spread: 80,
+        origin: { y: 0.65 },
+        colors: ['#F4D2D7', '#D4AF37', '#8B3A4D', '#FFF', '#9CAF88'],
+      });
+    }, 2400);
+  };
+
+  const handleResetCeremony = () => {
+    sound.playChime(500);
+    setPhase('wish');
+    setIsCutting(false);
+  };
+
   return (
-    <section id="cake" className="py-16 sm:py-24 bg-[#FCF9F3]/60 border-y border-[#E8DFC8]/60 relative">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        {/* Unboxed category metadata */}
-        <div className="flex items-center justify-center gap-2 text-xs font-medium text-[#8B6E60] tracking-wider uppercase mb-3">
-          <span>The Birthday Tradition</span>
-          <span aria-hidden="true">·</span>
-          <span>Make a Birthday Wish</span>
-          <span aria-hidden="true">·</span>
-          <span>Cast into the Universe</span>
+    <section id="cake" className="py-14 sm:py-20 bg-[#FCF9F3]/80 border-y border-[#E8DFC8]/70 relative overflow-hidden">
+      {/* Decorative background aura */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-[#F4D2D7]/20 via-[#FAF0DC]/40 to-[#FCE181]/15 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+        
+        {/* Step Indicator Badges */}
+        <div className="flex items-center justify-center gap-2 sm:gap-3 text-xs font-semibold uppercase tracking-wider mb-3">
+          <span className={`px-3 py-1 rounded-full transition-all ${phase === 'wish' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
+            1. Make Wish
+          </span>
+          <span className="text-[#8B6E60]/40">→</span>
+          <span className={`px-3 py-1 rounded-full transition-all ${phase === 'blow' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
+            2. Blow Candles
+          </span>
+          <span className="text-[#8B6E60]/40">→</span>
+          <span className={`px-3 py-1 rounded-full transition-all ${phase === 'cut' || phase === 'served' ? 'bg-[#8B3A4D] text-white shadow-xs' : 'bg-black/5 text-[#8B6E60]'}`}>
+            3. Cut Slice 🍰
+          </span>
         </div>
 
-        <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#2D2424] text-balance">
-          Blow Out Your Candles, Anu! ✨
+        {/* Dynamic Title based on Phase */}
+        <h2 className="font-serif text-3xl sm:text-5xl font-bold text-[#2D2424] text-balance">
+          {phase === 'wish' && 'Step 1: Whisper Your Secret Wish 🎂'}
+          {phase === 'blow' && 'Step 2: Now Blow Out Your Candles! 🌬️'}
+          {(phase === 'cut' || phase === 'served') && 'Step 3: Cut the First Slice for Anuradha 🍰'}
         </h2>
-        <p className="mt-3 text-sm sm:text-base text-[#6B5E59] max-w-xl mx-auto">
-          Close your eyes, make a true wish from the bottom of your heart for this new year of your life, and blow softly. May all your dreams take flight!
+
+        <p className="mt-2 text-sm sm:text-base text-[#6B5E59] max-w-xl mx-auto">
+          {phase === 'wish' && 'Close your eyes, think of what your heart truly desires this year, and seal it into the stars.'}
+          {phase === 'blow' && 'Your wish is locked! Take a deep breath, make that wish true, and blow out the glowing flames.'}
+          {phase === 'cut' && 'The candles are out and your wishes have flown! Tap below to cut the cake and serve the first slice.'}
+          {phase === 'served' && 'Sweet strawberry layers served just for you! May this new year bring endless happiness and smiles.'}
         </p>
 
-        {/* Realistic Layered Birthday Cake Illustration */}
-        <div className="mt-12 relative flex flex-col items-center justify-center min-h-[320px]">
-          {/* Wish delivery flight animation if just sent */}
-          {wishDelivered && (
-            <div className="mb-6 p-5 rounded-2xl bg-[#E6ECE7] border border-[#B8CEBC] text-[#2C4A34] text-xs sm:text-sm font-medium animate-float-gentle flex flex-col items-center gap-2 max-w-md mx-auto shadow-xs">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-[#4A6753] shrink-0" />
-                <span>Your birthday wish has taken flight into the universe! May every dream come true, Anu! 🌟</span>
-              </div>
-              {onNext && (
-                <button
-                  onClick={onNext}
-                  className="mt-2 px-5 py-2 rounded-full bg-[#2C4A34] hover:bg-[#1E3324] text-white text-xs font-semibold cursor-pointer shadow-xs transition-all flex items-center gap-1.5"
-                >
-                  <span>Continue to Our Memories</span>
-                  <span>→</span>
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Candle Flames & Smoke */}
-          <div className="flex items-end justify-center gap-6 sm:gap-10 mb-[-4px] z-10">
-            {[0, 1, 2].map((idx) => (
-              <div key={idx} className="flex flex-col items-center">
-                {/* Flame or smoke */}
-                {!candlesBlown ? (
-                  <div
-                    className="w-4 h-6 sm:w-5 sm:h-7 bg-gradient-to-t from-[#FF7A00] via-[#FFAE00] to-[#FFF6A3] rounded-full animate-flame origin-bottom cursor-pointer"
-                    title="Click or blow to extinguish"
-                    onClick={handleBlowCandles}
-                  />
-                ) : (
-                  <div className="h-6 flex flex-col items-center justify-end">
-                    <span className="w-1.5 h-4 bg-[#7A736E]/40 rounded-full blur-[1px] animate-pulse" />
-                    <span className="text-[10px] text-[#A8A29E] font-handwriting">smoke...</span>
-                  </div>
-                )}
-                {/* Candle Wick */}
-                <div className="w-0.5 h-2 bg-[#44403C]" />
-                {/* Candle Stick */}
-                <div
-                  className={`w-3.5 sm:w-4 h-12 sm:h-14 rounded-t-xs border border-white/60 shadow-xs ${
-                    idx === 0
-                      ? 'bg-gradient-to-b from-[#F7B2BD] to-[#F18B99]'
-                      : idx === 1
-                      ? 'bg-gradient-to-b from-[#FCE181] to-[#E9C46A]'
-                      : 'bg-gradient-to-b from-[#BEE3DB] to-[#89B0AE]'
-                  }`}
+        {/* STEP 1: WISH INPUT FORM (Shown when phase === 'wish') */}
+        <AnimatePresence>
+          {phase === 'wish' && (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="mt-6 max-w-md mx-auto bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-[#E8DFC8] shadow-md relative"
+            >
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-5 washi-tape washi-tape-pink rounded-xs opacity-90" />
+              
+              <form onSubmit={handleSealWish} className="space-y-3">
+                <textarea
+                  rows={3}
+                  value={wishInput}
+                  onChange={(e) => setWishInput(e.target.value)}
+                  placeholder="Whisper your secret birthday wish here... (e.g., Peace, love, happiness, college reunions & endless laughs ✨)"
+                  className="w-full p-3.5 rounded-xl border border-[#E8DFC8] bg-[#FAF7F2] text-xs sm:text-sm text-[#2D2424] placeholder-[#A8988F] focus:outline-none focus:ring-2 focus:ring-[#8B3A4D]/30 resize-none font-sans"
+                  autoFocus
                 />
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWishInput('A secret wish held close to my heart ✨');
+                      handleSealWish();
+                    }}
+                    className="text-xs text-[#8B6E60] hover:text-[#5B2333] underline cursor-pointer"
+                  >
+                    Keep it secret in my heart
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isSendingWish}
+                    className="w-full sm:w-auto px-5 py-2 rounded-full bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white text-xs font-semibold shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{isSendingWish ? 'Sealing...' : 'Seal My Wish & Light Candles →'}</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ============================================================== */}
+        {/* THE LAYERED BIRTHDAY CAKE & INTERACTIVE SLICING STAGE */}
+        {/* ============================================================== */}
+        <div className="mt-8 relative flex flex-col items-center justify-center min-h-[340px]">
+          
+          {/* Candle Flames & Smoke */}
+          <div className="flex items-end justify-center gap-6 sm:gap-10 mb-[-4px] z-20">
+            {[0, 1, 2].map((idx) => {
+              const areFlamesActive = phase === 'wish' || phase === 'blow';
+              return (
+                <div key={idx} className="flex flex-col items-center">
+                  {areFlamesActive ? (
+                    <motion.div
+                      animate={{
+                        scale: [1, 1.15, 0.95, 1.1, 1],
+                        rotate: [0, -2, 2, -1, 0],
+                      }}
+                      transition={{ duration: 1.5 + idx * 0.2, repeat: Infinity, ease: 'easeInOut' }}
+                      className="w-4 h-6 sm:w-5 sm:h-7 bg-gradient-to-t from-[#FF7A00] via-[#FFAE00] to-[#FFF6A3] rounded-full shadow-[0_0_15px_#FFAE00] origin-bottom cursor-pointer"
+                      title={phase === 'blow' ? 'Click to blow out' : 'Lighted candle'}
+                      onClick={() => phase === 'blow' && handleBlowCandles()}
+                    />
+                  ) : (
+                    <div className="h-6 flex flex-col items-center justify-end">
+                      <span className="w-1.5 h-4 bg-[#7A736E]/40 rounded-full blur-[1px] animate-pulse" />
+                      <span className="text-[10px] text-[#A8A29E] font-handwriting">smoke...</span>
+                    </div>
+                  )}
+
+                  {/* Candle Wick */}
+                  <div className="w-0.5 h-2 bg-[#44403C]" />
+                  {/* Candle Body */}
+                  <div
+                    className={`w-3.5 sm:w-4 h-12 sm:h-14 rounded-t-xs border border-white/60 shadow-xs ${
+                      idx === 0
+                        ? 'bg-gradient-to-b from-[#F7B2BD] to-[#F18B99]'
+                        : idx === 1
+                        ? 'bg-gradient-to-b from-[#FCE181] to-[#E9C46A]'
+                        : 'bg-gradient-to-b from-[#BEE3DB] to-[#89B0AE]'
+                    }`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* CAKE CONTAINER */}
+          <div className="relative z-10 flex flex-col items-center">
+            {/* Cake Top Tier */}
+            <div className="w-48 sm:w-60 h-16 sm:h-20 bg-[#FFF5EB] rounded-t-2xl border-t-4 border-x border-[#F4D2D7] relative shadow-inner flex flex-col items-center overflow-visible">
+              
+              {/* Sliced Wedge Gap (visible when sliced) */}
+              {(isCutting || phase === 'served') && (
+                <div className="absolute right-8 top-0 w-8 h-full bg-[#E5D7BF] border-x border-[#D8C7AA] shadow-inner opacity-80" />
+              )}
+
+              {/* Frosting Drips */}
+              <div className="w-full flex justify-around px-2 -mt-1">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="w-4 h-3 bg-[#F4D2D7] rounded-b-full shadow-xs" />
+                ))}
               </div>
-            ))}
+
+              {/* Fresh Strawberries & Pearls */}
+              <div className="mt-auto pb-2 flex gap-4 text-[#8B3A4D] text-xs">
+                <span>🍓</span>
+                <span>✨</span>
+                <span>🍓</span>
+                <span>✨</span>
+                <span>🍓</span>
+              </div>
+            </div>
+
+            {/* Cake Bottom Tier */}
+            <div className="w-64 sm:w-80 h-20 sm:h-24 bg-[#FAF0DC] rounded-t-xl border-t-4 border-x border-[#E8DFC8] relative shadow-md flex flex-col items-center justify-between p-3 overflow-visible">
+              
+              {/* Sliced Wedge Gap in bottom tier */}
+              {(isCutting || phase === 'served') && (
+                <div className="absolute right-10 top-0 w-10 h-full bg-[#DFCBB0] border-x border-[#CDB89B] shadow-inner opacity-85" />
+              )}
+
+              <div className="w-full flex justify-around px-2 -mt-3">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="w-4 h-4 bg-[#F4D2D7] rounded-b-full" />
+                ))}
+              </div>
+
+              <p className="font-handwriting text-lg sm:text-2xl text-[#5B2333] font-bold tracking-wider drop-shadow-xs">
+                Happy Birthday, Anuradha ✨
+              </p>
+              
+              <div className="w-full h-1.5 bg-[#8B3A4D]/20 rounded-full" />
+            </div>
+
+            {/* Cake Stand Base */}
+            <div className="w-72 sm:w-96 h-4 bg-[#E0D5C1] rounded-full shadow-sm" />
+            <div className="w-24 sm:w-32 h-6 bg-[#C9BC9F] rounded-b-lg shadow-md" />
           </div>
 
-          {/* Cake Top Tier */}
-          <div className="w-48 sm:w-60 h-16 sm:h-20 bg-[#FFF5EB] rounded-t-2xl border-t-4 border-x border-[#F4D2D7] relative shadow-inner flex flex-col items-center">
-            {/* Frosting drips */}
-            <div className="w-full flex justify-around px-2 -mt-1">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="w-4 h-3 bg-[#F4D2D7] rounded-b-full shadow-xs" />
-              ))}
-            </div>
-            {/* Strawberries / Gold pearls decorative */}
-            <div className="mt-auto pb-2 flex gap-4 text-[#8B3A4D] text-xs">
-              <span>🍓</span>
-              <span>✨</span>
-              <span>🍓</span>
-              <span>✨</span>
-              <span>🍓</span>
+          {/* ============================================================== */}
+          {/* ANIMATED HAND SLICING CAKE & SERVING ONTO PORCELAIN PLATE */}
+          {/* ============================================================== */}
+          <AnimatePresence>
+            {isCutting && (
+              <motion.div
+                className="absolute z-40 pointer-events-none"
+                initial={{ opacity: 0, x: 140, y: -80, rotate: 25 }}
+                animate={{
+                  opacity: [0, 1, 1, 1, 0],
+                  x: [140, 50, 40, -110, -140],
+                  y: [-80, -10, -50, 60, 80],
+                  rotate: [25, 5, -8, -12, 0],
+                }}
+                transition={{
+                  duration: 2.3,
+                  times: [0, 0.25, 0.55, 0.85, 1],
+                  ease: 'easeInOut',
+                }}
+              >
+                {/* Hand holding golden cake knife / server with strawberry slice */}
+                <div className="relative flex flex-col items-center">
+                  {/* Delicate sleeve & wrist */}
+                  <div className="w-10 h-16 bg-gradient-to-b from-[#F4D2D7] to-[#FFF0F3] rounded-t-full border border-[#E8DFC8] shadow-md -mb-2" />
+                  
+                  {/* Hand holding handle */}
+                  <div className="w-7 h-8 bg-[#FFDFC4] rounded-full shadow-sm relative z-10 flex items-center justify-center">
+                    <span className="w-2 h-4 bg-[#D4AF37] rounded-full rotate-45" />
+                  </div>
+
+                  {/* Golden cake server blade */}
+                  <div className="relative">
+                    <div 
+                      className="w-14 h-24 bg-gradient-to-b from-[#FFD700] via-[#D4AF37] to-[#AA820A] shadow-lg rounded-b-xs"
+                      style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}
+                    />
+                    {/* The cake slice resting on the knife */}
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-10 bg-[#FFF5EB] border border-[#F4D2D7] rounded-xs shadow-sm flex flex-col items-center justify-center text-xs">
+                      <span>🍓</span>
+                      <div className="w-full h-1 bg-[#F4D2D7]" />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ============================================================== */}
+          {/* PORCELAIN SERVING PLATE (Appears in front / beside cake) */}
+          {/* ============================================================== */}
+          <div className="mt-4 sm:mt-6 relative flex flex-col items-center">
+            <div className="w-48 sm:w-56 h-14 bg-gradient-to-b from-[#FFFFFF] to-[#F5EFE6] rounded-[50%] border-4 border-[#D4AF37]/40 shadow-[0_10px_25px_rgba(0,0,0,0.15)] flex items-center justify-center relative">
+              <div className="w-40 sm:w-46 h-10 rounded-[50%] border border-[#E8DFC8] bg-white flex items-center justify-center">
+                
+                {phase === 'served' ? (
+                  /* Sliced Cake Slice Sitting on Plate */
+                  <motion.div
+                    initial={{ scale: 0, y: -20, opacity: 0 }}
+                    animate={{ scale: 1, y: 0, opacity: 1 }}
+                    transition={{ type: 'spring', damping: 14 }}
+                    className="relative flex flex-col items-center -mt-6 cursor-pointer group"
+                    onClick={() => sound.playSparkleCelebration()}
+                  >
+                    <div className="relative">
+                      {/* Strawberry & cream top */}
+                      <span className="text-2xl sm:text-3xl block filter drop-shadow-md animate-bounce">
+                        🍰
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-bold text-[#8B3A4D] bg-[#FFF0F3] px-2.5 py-0.5 rounded-full border border-[#F4D2D7] shadow-xs">
+                      Anu's Slice ✨
+                    </span>
+                  </motion.div>
+                ) : (
+                  <span className="text-[10px] text-[#A8988F] font-serif italic tracking-wider">
+                    {phase === 'cut' ? 'Ready for your slice...' : 'Royal Porcelain Plate'}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Cake Bottom Tier */}
-          <div className="w-64 sm:w-80 h-20 sm:h-24 bg-[#FAF0DC] rounded-t-xl border-t-4 border-x border-[#E8DFC8] relative shadow-md flex flex-col items-center justify-between p-3">
-            <div className="w-full flex justify-around px-2 -mt-3">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="w-4 h-4 bg-[#F4D2D7] rounded-b-full" />
-              ))}
-            </div>
-            <p className="font-handwriting text-lg sm:text-xl text-[#5B2333] font-bold tracking-wider">
-              Happy Birthday, Anuradha ✨
-            </p>
-            <div className="w-full h-1.5 bg-[#8B3A4D]/20 rounded-full" />
-          </div>
-
-          {/* Cake Stand */}
-          <div className="w-72 sm:w-96 h-4 bg-[#E0D5C1] rounded-full shadow-sm" />
-          <div className="w-24 sm:w-32 h-6 bg-[#C9BC9F] rounded-b-lg shadow-md" />
         </div>
 
-        {/* Action Controls */}
+        {/* ============================================================== */}
+        {/* PHASE CONTROLS (Blow / Cut Slice / Relight) */}
+        {/* ============================================================== */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          {!candlesBlown ? (
+          {phase === 'wish' && (
+            <button
+              onClick={() => handleSealWish()}
+              className="px-6 py-2.5 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-semibold text-sm transition-all shadow-md cursor-pointer flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4 text-[#FFD166]" />
+              <span>Seal Birthday Wish & Continue →</span>
+            </button>
+          )}
+
+          {phase === 'blow' && (
             <>
               <button
                 onClick={handleBlowCandles}
-                className="px-6 py-2.5 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-medium text-sm transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center gap-2"
+                className="px-7 py-3 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-bold text-sm transition-all shadow-lg hover:scale-105 cursor-pointer flex items-center gap-2"
               >
-                <Wind className="w-4 h-4" />
-                <span>Tap to Blow Candles</span>
+                <Wind className="w-4 h-4 text-[#FFD166]" />
+                <span>Blow Out the Candles! 🌬️</span>
               </button>
 
               <button
@@ -302,128 +462,58 @@ export const CakeSection: React.FC<CakeSectionProps> = ({ onNext }) => {
                 )}
               </button>
             </>
-          ) : (
+          )}
+
+          {phase === 'cut' && (
+            <button
+              onClick={handleCutSlice}
+              disabled={isCutting}
+              className="px-8 py-3 bg-gradient-to-r from-[#D4AF37] via-[#F3C64F] to-[#D4AF37] hover:brightness-105 text-[#2D2424] rounded-full font-bold text-sm transition-all shadow-lg hover:scale-105 cursor-pointer flex items-center gap-2 border border-[#B38F24]"
+            >
+              <span>{isCutting ? 'Hand Slicing Cake... 🍰' : 'Cut a Slice for Anu 🍰'}</span>
+            </button>
+          )}
+
+          {phase === 'served' && (
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <button
-                onClick={() => setIsWishModalOpen(true)}
-                className="px-5 py-2.5 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-medium text-sm transition-all shadow-sm cursor-pointer flex items-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Make a Birthday Wish 🎂</span>
-              </button>
+              {onNext && (
+                <button
+                  onClick={onNext}
+                  className="px-8 py-3 bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full font-bold text-sm transition-all shadow-lg hover:scale-105 cursor-pointer flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4 text-[#FFD166]" />
+                  <span>Open Princess Sky Tower Album →</span>
+                </button>
+              )}
 
               <button
-                onClick={() => {
-                  sound.playSparkleCelebration();
-                  setSliceCut(true);
-                  confetti({
-                    particleCount: 80,
-                    spread: 70,
-                    origin: { y: 0.65 },
-                    colors: ['#F4D2D7', '#D4AF37', '#8B3A4D', '#FFF', '#9CAF88'],
-                  });
-                }}
-                className="px-4 py-2.5 rounded-full text-xs font-semibold bg-[#FAF0DC] hover:bg-[#F5E6CA] border border-[#E8DFC8] text-[#5B2333] transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                onClick={handleResetCeremony}
+                className="px-4 py-2.5 rounded-full text-xs font-medium bg-white border border-[#E8DFC8] text-[#6B5E59] hover:bg-[#FAF7F2] transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                <span>Cut a Slice 🍰</span>
-              </button>
-
-              <button
-                onClick={handleRelightCandles}
-                className="px-4 py-2.5 rounded-full text-xs font-medium bg-white border border-[#E8DFC8] text-[#6B5E59] hover:bg-[#FAF7F2] transition-colors cursor-pointer"
-              >
-                Relight Candles 🔥
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Relight & Repeat</span>
               </button>
             </div>
           )}
         </div>
 
-        {/* Cake Slice Reveal Popup */}
-        {sliceCut && (
-          <div className="mt-8 max-w-md mx-auto p-5 rounded-2xl bg-[#FFFDF8] border border-[#E8DFC8] shadow-md animate-float-gentle relative text-center">
-            <span className="text-4xl block mb-2">🍰✨</span>
+        {/* Served Slice Celebration Card */}
+        {phase === 'served' && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 max-w-md mx-auto p-5 rounded-2xl bg-[#FFFDF8] border border-[#E8DFC8] shadow-md text-center relative"
+          >
+            <span className="text-3xl block mb-1">🍰🍓✨</span>
             <h4 className="font-serif text-lg font-bold text-[#5B2333]">
-              The First Slice is for You, Anuradha!
+              The First Slice is Served for You, Anuradha!
             </h4>
             <p className="text-xs text-[#6B5E59] mt-1 leading-relaxed">
-              Sweet strawberry layers, vanilla cream, and all the love in the universe. May your life taste as sweet and beautiful as this slice!
+              Sweet strawberry layers, fluffy vanilla cream, and a heart full of warm wishes. May your life taste as sweet and beautiful as this slice!
             </p>
-            <button
-              onClick={() => setSliceCut(false)}
-              className="mt-3 text-[11px] text-[#8B3A4D] underline cursor-pointer hover:text-[#5B2333]"
-            >
-              Enjoy the celebration ✦
-            </button>
-          </div>
+          </motion.div>
         )}
       </div>
-
-      {/* Make a Wish Modal Dialog */}
-      {isWishModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-[#FCF9F3] rounded-2xl max-w-lg w-full p-6 sm:p-8 border border-[#E8DFC8] shadow-2xl relative animate-float-gentle">
-            {/* Washi tape aesthetic */}
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-32 h-6 washi-tape washi-tape-pink rounded-xs pointer-events-none opacity-90" />
-
-            {isSendingWish ? (
-              <div className="py-12 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 text-[#8B3A4D] animate-bounce">
-                  <Sparkles className="w-16 h-16" />
-                </div>
-                <h3 className="font-serif text-2xl font-bold text-[#5B2333]">
-                  Casting Your Wish to the Universe...
-                </h3>
-                <p className="text-xs text-[#7A6B63] mt-2">
-                  Sending your birthday dreams into the stars. May they all come true! ✨
-                </p>
-              </div>
-            ) : (
-              <div>
-                <div className="text-center mb-6">
-                  <div className="inline-flex p-2 rounded-full bg-[#F4D2D7]/50 text-[#8B3A4D] mb-2">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-serif text-2xl font-bold text-[#2D2424]">
-                    Make a Birthday Wish 🎂
-                  </h3>
-                  <p className="text-xs text-[#7A6B63] mt-1">
-                    What does your heart desire this year? Close your eyes and make a true wish from your heart.
-                  </p>
-                </div>
-
-                <form onSubmit={handleSendWish}>
-                  <textarea
-                    rows={4}
-                    value={wishInput}
-                    onChange={(e) => setWishInput(e.target.value)}
-                    placeholder="Write your birthday wish here... (e.g. May this year be filled with happiness, peace, success, and beautiful adventures ✨)"
-                    className="w-full p-4 rounded-xl border border-[#E8DFC8] bg-[#FAF7F2] text-sm text-[#2D2424] placeholder-[#A8988F] focus:outline-none focus:ring-2 focus:ring-[#8B3A4D]/30 resize-none font-sans"
-                    required
-                    autoFocus
-                  />
-
-                  <div className="mt-5 flex items-center justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setIsWishModalOpen(false)}
-                      className="px-4 py-2 text-xs font-medium text-[#6B5E59] hover:bg-[#F2ECE4] rounded-lg cursor-pointer"
-                    >
-                      Close
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-5 py-2 text-xs sm:text-sm font-medium bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white rounded-full transition-all shadow-xs cursor-pointer flex items-center gap-2"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Send Wish to the Stars ✨</span>
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </section>
   );
 };

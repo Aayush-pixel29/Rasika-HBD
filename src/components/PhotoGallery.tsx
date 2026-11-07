@@ -19,7 +19,8 @@ import {
   VolumeX, 
   Sparkles, 
   X,
-  Heart
+  Heart,
+  Maximize2
 } from 'lucide-react';
 import { MemoryPhoto } from '../types';
 import { INITIAL_MEMORIES } from '../data/defaultContent';
@@ -29,37 +30,26 @@ interface PhotoGalleryProps {
   onNext?: () => void;
 }
 
-type SkyTheme = 'sunset' | 'moon' | 'day';
+type SkyMode = 'panorama' | 'sunset' | 'day' | 'moon';
 
 export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ onNext }) => {
-  const [memories, setMemories] = useState<MemoryPhoto[]>(() => {
+  // Always load latest curated memories with videos and notes
+  const [memories] = useState<MemoryPhoto[]>(() => {
     try {
       localStorage.removeItem('college_memories_v1');
       localStorage.removeItem('college_memories_v2');
       localStorage.removeItem('college_memories_v3');
       localStorage.removeItem('college_memories_v4');
-
-      const stored = localStorage.getItem('college_memories_v5');
-      if (stored) {
-        const parsed: MemoryPhoto[] = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length >= INITIAL_MEMORIES.length) {
-          return parsed.map((item, idx) => {
-            if (INITIAL_MEMORIES[idx]) {
-              return { ...item, url: INITIAL_MEMORIES[idx].url };
-            }
-            return item;
-          });
-        }
-      }
-      localStorage.setItem('college_memories_v5', JSON.stringify(INITIAL_MEMORIES));
+      localStorage.removeItem('college_memories_v5');
       return INITIAL_MEMORIES;
     } catch {
       return INITIAL_MEMORIES;
     }
   });
 
-  const [skyTheme, setSkyTheme] = useState<SkyTheme>('sunset');
+  const [skyMode, setSkyMode] = useState<SkyMode>('panorama');
   const [viewMode, setViewMode] = useState<'album' | 'wall'>('album');
+  const [isAlbumOpened, setIsAlbumOpened] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [flippedIds, setFlippedIds] = useState<Record<string, boolean>>({});
   const [zoomedPhoto, setZoomedPhoto] = useState<MemoryPhoto | null>(null);
@@ -85,548 +75,634 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ onNext }) => {
     setCurrentPage((p) => (p - 1 + memories.length) % memories.length);
   };
 
-  const switchTheme = (theme: SkyTheme) => {
-    sound.playChime(theme === 'sunset' ? 520 : theme === 'moon' ? 640 : 580);
-    setSkyTheme(theme);
+  // Safe media resolver for GitHub Pages relative bases
+  const getMediaUrl = (path?: string) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const clean = path.replace(/^\.?\//, '');
+    return `${import.meta.env.BASE_URL}${clean}`;
   };
-
-  // Atmospheric scenery styles based on selected sky theme
-  const skyConfig = {
-    sunset: {
-      bg: 'linear-gradient(180deg, #2D1436 0%, #682A4C 28%, #A84B53 55%, #E07D5A 78%, #F7C88C 100%)',
-      textColor: 'text-[#FFF7EE]',
-      accentColor: '#FFC875',
-      name: 'Sunset Twilight',
-      icon: Sun,
-      orbClass: 'bg-gradient-to-t from-[#FF884D] to-[#FFAE52] shadow-[0_0_80px_#FFAE52]',
-    },
-    moon: {
-      bg: 'linear-gradient(180deg, #070B19 0%, #111A35 30%, #1A284E 60%, #29385C 85%, #384A6E 100%)',
-      textColor: 'text-[#EAF0F8]',
-      accentColor: '#B6D5F5',
-      name: 'Midnight Moon',
-      icon: Moon,
-      orbClass: 'bg-gradient-to-br from-[#FFFFFF] to-[#D9E6F2] shadow-[0_0_90px_rgba(255,255,255,0.7)]',
-    },
-    day: {
-      bg: 'linear-gradient(180deg, #5CA4E8 0%, #7CBDF5 35%, #A8D4FA 65%, #CEE5FB 85%, #EBF4FC 100%)',
-      textColor: 'text-[#1D2E4A]',
-      accentColor: '#2B609E',
-      name: 'Azure Day Sky',
-      icon: Cloud,
-      orbClass: 'bg-gradient-to-br from-[#FFF8E7] to-[#FFE082] shadow-[0_0_70px_#FFE082]',
-    },
-  }[skyTheme];
 
   return (
     <section 
       id="memories" 
-      className="min-h-screen py-10 sm:py-16 px-3 sm:px-6 relative overflow-hidden transition-all duration-1000"
-      style={{ background: skyConfig.bg }}
+      className="min-h-screen py-10 sm:py-16 px-2 sm:px-6 relative overflow-hidden transition-all duration-1000"
+      style={{
+        background: skyMode === 'sunset' 
+          ? 'linear-gradient(180deg, #2D1436 0%, #682A4C 28%, #A84B53 55%, #E07D5A 78%, #F7C88C 100%)'
+          : skyMode === 'moon'
+          ? 'linear-gradient(180deg, #070B19 0%, #111A35 30%, #1A284E 60%, #29385C 85%, #384A6E 100%)'
+          : skyMode === 'day'
+          ? 'linear-gradient(180deg, #3A88E9 0%, #63B3F8 35%, #9CD4FC 65%, #CEE5FB 85%, #EBF4FC 100%)'
+          // 3-IN-1 PANORAMA: Sunset on left, Azure Blue Sky + Rainbow in center, Moonlit Night on right
+          : 'linear-gradient(180deg, #1C1938 0%, #2E2554 18%, #493B6E 35%, #7B4B67 55%, #A8655E 75%, #D69766 100%)',
+      }}
     >
-      {/* 3D Celestial Scenery Elements */}
+      {/* ============================================================== */}
+      {/* 3D CELESTIAL BACKGROUND: 3 VIEWS IN 1 (Sunset, Blue Sky + Rainbow, Moon) */}
+      {/* ============================================================== */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Glowing Sun or Moon */}
-        <div 
-          className={`absolute rounded-full transition-all duration-1000 ${skyConfig.orbClass}`}
-          style={{
-            width: skyTheme === 'sunset' ? 140 : skyTheme === 'moon' ? 110 : 95,
-            height: skyTheme === 'sunset' ? 140 : skyTheme === 'moon' ? 110 : 95,
-            top: skyTheme === 'sunset' ? '28%' : skyTheme === 'moon' ? '12%' : '14%',
-            right: skyTheme === 'sunset' ? '18%' : skyTheme === 'moon' ? '15%' : '20%',
-            opacity: 0.9,
-          }}
-        />
+        
+        {/* VIEW 1: SUNSET HORIZON (Left Side) */}
+        <div className="absolute top-0 left-0 w-full sm:w-1/3 h-full opacity-90 transition-opacity duration-700">
+          {/* Setting Sun Orb */}
+          <div className="absolute top-16 left-8 sm:left-16 w-28 h-28 rounded-full bg-gradient-to-t from-[#FF7A00] via-[#FFAE00] to-[#FFE27D] shadow-[0_0_80px_#FFAE00] opacity-85" />
+          {/* Twilight Sun Rays */}
+          <div className="absolute top-2 left-0 w-64 h-64 bg-radial from-[#FFAE00]/30 to-transparent blur-2xl" />
+          {/* Evening clouds */}
+          <div className="absolute top-36 left-4 w-48 h-10 bg-[#FFD1A9]/20 rounded-full blur-md" />
+          <div className="absolute top-48 left-16 w-60 h-12 bg-[#E27D60]/25 rounded-full blur-lg" />
+        </div>
 
-        {/* Stars for Moonlit Night */}
-        {skyTheme === 'moon' && (
-          <div className="absolute inset-0">
-            {Array.from({ length: 45 }).map((_, i) => (
-              <span
-                key={i}
-                className="absolute rounded-full bg-white animate-pulse"
-                style={{
-                  width: (i % 3) + 1.5,
-                  height: (i % 3) + 1.5,
-                  top: `${(i * 19) % 85}%`,
-                  left: `${(i * 23) % 98}%`,
-                  animationDuration: `${1.5 + (i % 3)}s`,
-                  opacity: 0.4 + ((i % 5) * 0.15),
-                }}
-              />
-            ))}
+        {/* VIEW 2: AZURE SKY + VIBRANT RAINBOW (Center) */}
+        <div className="absolute top-0 left-0 right-0 h-full flex justify-center pointer-events-none">
+          {/* Radiant Sunlight */}
+          <div className="absolute top-4 w-72 h-72 rounded-full bg-radial from-[#FFF9D2]/35 via-[#70C1FF]/10 to-transparent blur-2xl" />
+          
+          {/* The Arched Rainbow */}
+          <div 
+            className="absolute -top-12 w-[340px] sm:w-[680px] h-[220px] sm:h-[340px] rounded-t-full border-[10px] sm:border-[18px] opacity-75 blur-[1px] animate-pulse"
+            style={{
+              borderImage: 'linear-gradient(to top, rgba(255,0,0,0.5), rgba(255,165,0,0.5), rgba(255,255,0,0.5), rgba(0,128,0,0.5), rgba(0,0,255,0.5), rgba(238,130,238,0.5)) 1',
+              borderBottom: 'none',
+              filter: 'drop-shadow(0 0 15px rgba(255,255,255,0.4))',
+            }}
+          />
+
+          {/* Drifting Fluffy White Clouds */}
+          <div className="absolute top-28 w-44 h-12 bg-white/35 rounded-full blur-md animate-float-gentle" />
+          <div className="absolute top-36 left-1/3 w-36 h-10 bg-white/30 rounded-full blur-sm" />
+          <div className="absolute top-20 right-1/3 w-40 h-11 bg-white/25 rounded-full blur-md" />
+        </div>
+
+        {/* VIEW 3: MIDNIGHT MOON & STARS (Right Side) */}
+        <div className="absolute top-0 right-0 w-full sm:w-1/3 h-full opacity-90 transition-opacity duration-700">
+          {/* Luminous Crescent Moon */}
+          <div className="absolute top-14 right-8 sm:right-20 w-24 h-24 rounded-full shadow-[0_0_70px_rgba(255,255,255,0.85)] bg-gradient-to-br from-[#FFFFFF] to-[#E3EAF5] flex items-center justify-center">
+            {/* Moon Crater shadows */}
+            <div className="w-4 h-4 rounded-full bg-[#CBD5E1]/40 absolute top-4 left-5" />
+            <div className="w-3 h-3 rounded-full bg-[#CBD5E1]/30 absolute bottom-5 right-6" />
           </div>
-        )}
 
-        {/* Floating Clouds for Azure Day Sky */}
-        {skyTheme === 'day' && (
-          <>
-            <div className="cloud" style={{ top: '8%', animationDuration: '45s', opacity: 0.8 }} />
-            <div className="cloud" style={{ top: '22%', animationDuration: '60s', animationDelay: '-18s', transform: 'scale(0.8)', opacity: 0.7 }} />
-            <div className="cloud" style={{ top: '40%', animationDuration: '52s', animationDelay: '-30s', transform: 'scale(1.1)', opacity: 0.6 }} />
-          </>
-        )}
+          {/* Shimmering Starfield */}
+          {Array.from({ length: 30 }).map((_, i) => (
+            <span
+              key={i}
+              className="absolute rounded-full bg-white animate-pulse"
+              style={{
+                width: (i % 3) + 1.5,
+                height: (i % 3) + 1.5,
+                top: `${(i * 19) % 70 + 8}%`,
+                right: `${(i * 13) % 85 + 5}%`,
+                animationDuration: `${(i % 4) + 2}s`,
+                opacity: 0.85,
+              }}
+            />
+          ))}
+        </div>
 
-        {/* Floating golden twilight dust particles for Sunset */}
-        {skyTheme === 'sunset' && (
-          <div className="absolute inset-0">
-            {Array.from({ length: 24 }).map((_, i) => (
-              <span
-                key={i}
-                className="absolute rounded-full bg-[#FFDF9E] animate-pulse"
-                style={{
-                  width: (i % 3) + 2,
-                  height: (i % 3) + 2,
-                  top: `${(i * 21) % 95}%`,
-                  left: `${(i * 17) % 96}%`,
-                  animationDuration: `${2 + (i % 3)}s`,
-                  opacity: 0.6,
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Castle Balustrade / High Terrace Silhouette at the bottom */}
-        <div 
-          className="absolute bottom-0 inset-x-0 h-28 sm:h-36 opacity-35"
-          style={{
-            background: 'linear-gradient(to top, rgba(0,0,0,0.65), transparent)',
-            borderTop: '2px solid rgba(255,255,255,0.1)',
-          }}
-        />
+        {/* Castle Balcony Parapet Silhouette / Stone Ledge */}
+        <div className="absolute bottom-0 inset-x-0 h-28 sm:h-36 bg-gradient-to-t from-[#140F1D] via-[#241A2E] to-transparent opacity-95" />
       </div>
 
-      <div className="max-w-5xl mx-auto relative z-10">
-        {/* Princess Terrace Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/30 backdrop-blur-md text-white text-[11px] font-semibold tracking-widest uppercase mb-2 border border-white/15">
+      {/* ============================================================== */}
+      {/* SECTION CONTENT CONTAINER */}
+      {/* ============================================================== */}
+      <div className="max-w-6xl mx-auto relative z-10">
+        
+        {/* Chapter Header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/40 backdrop-blur-md text-white text-[11px] font-semibold tracking-widest uppercase mb-2 border border-white/20 shadow-md">
             <Sparkles className="w-3 h-3 text-[#FFD166]" />
-            <span>Chapter II · The Keepsake Album</span>
+            <span>Chapter II · The Princess Sky Tower Album</span>
           </div>
 
-          <h2 className="font-display text-4xl sm:text-6xl text-white drop-shadow-md leading-tight">
-            Memories in the <span className="italic" style={{ color: skyConfig.accentColor }}>Sky</span>
+          <h2 className="font-display text-3xl sm:text-6xl text-white drop-shadow-lg leading-tight">
+            Memories in the <span className="italic text-[#FFD166]">Sky</span> ✨
           </h2>
-          <p className="font-handwriting text-2xl sm:text-3xl text-white/85 drop-shadow-sm mt-1">
-            sitting in her high tower, turning pages of time ✨
+          <p className="font-handwriting text-xl sm:text-2xl text-white/90 drop-shadow-sm mt-1">
+            sitting in her high tower with the sunset, rainbow & moon in one view
           </p>
 
-          {/* Sky Atmosphere Switcher & View Mode Controls */}
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-            {/* 3 Sky Themes */}
-            <div className="bg-black/35 backdrop-blur-md p-1 rounded-full border border-white/20 flex items-center gap-1 shadow-lg">
-              {(['sunset', 'moon', 'day'] as const).map((t) => {
-                const isActive = skyTheme === t;
-                const label = t === 'sunset' ? 'Sunset Glow' : t === 'moon' ? 'Moonlit Night' : 'Azure Sky';
+          {/* Perspective Switcher & Album Mode Controls */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            {/* Sky Perspective Switcher */}
+            <div className="bg-black/45 backdrop-blur-md p-1 rounded-full border border-white/25 flex items-center gap-1 shadow-xl">
+              {(['panorama', 'sunset', 'day', 'moon'] as const).map((mode) => {
+                const isActive = skyMode === mode;
+                const label = 
+                  mode === 'panorama' ? '🌅 🌈 🌙 3-in-1 View' :
+                  mode === 'sunset' ? '🌅 Sunset' :
+                  mode === 'day' ? '🌈 Rainbow Sky' : '🌙 Moonlit Night';
                 return (
                   <button
-                    key={t}
-                    onClick={() => switchTheme(t)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                    key={mode}
+                    onClick={() => {
+                      sound.playChime(mode === 'panorama' ? 620 : 540);
+                      setSkyMode(mode);
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                       isActive 
                         ? 'bg-white text-[#2D2424] shadow-md font-bold' 
                         : 'text-white/80 hover:text-white'
                     }`}
                   >
-                    <span>{t === 'sunset' ? '🌅' : t === 'moon' ? '🌙' : '☁️'}</span>
-                    <span className="hidden sm:inline">{label}</span>
+                    <span>{label}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* View Mode Switcher: Storybook Spread vs Gallery Wall */}
-            <div className="bg-black/35 backdrop-blur-md p-1 rounded-full border border-white/20 flex items-center gap-1 shadow-lg">
+            {/* View Mode: Open Book Spread vs All Polaroids */}
+            <div className="bg-black/45 backdrop-blur-md p-1 rounded-full border border-white/25 flex items-center gap-1 shadow-xl">
               <button
                 onClick={() => {
                   sound.playChime(500);
                   setViewMode('album');
+                  setIsAlbumOpened(true);
                 }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                   viewMode === 'album'
-                    ? 'bg-white text-[#2D2424] shadow-md font-bold'
+                    ? 'bg-[#FFD166] text-[#2D2424] shadow-md font-bold'
                     : 'text-white/80 hover:text-white'
                 }`}
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>Storybook</span>
+                <span>Storybook Spread</span>
               </button>
+
               <button
                 onClick={() => {
                   sound.playChime(550);
                   setViewMode('wall');
                 }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                   viewMode === 'wall'
-                    ? 'bg-white text-[#2D2424] shadow-md font-bold'
+                    ? 'bg-[#FFD166] text-[#2D2424] shadow-md font-bold'
                     : 'text-white/80 hover:text-white'
                 }`}
               >
                 <Grid className="w-3.5 h-3.5" />
-                <span>All Polaroids</span>
+                <span>All Polaroids & Clips</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* VIEW MODE 1: PRINCESS STORYBOOK SPREAD */}
-        {viewMode === 'album' && (
-          <div className="relative">
-            {/* Album Book Spine & Gilded Body */}
-            <div 
-              className="bg-[#2A1D1A] p-2.5 sm:p-5 rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] border-4 border-[#D4AF37]/50 relative"
-              style={{
-                boxShadow: '0 20px 50px rgba(0,0,0,0.6), inset 0 0 0 2px rgba(255,255,255,0.1)',
-              }}
-            >
-              {/* Inner Parchment Spread (Two-column open book on desktop, single on mobile) */}
-              <div className="bg-[#FAF7F0] rounded-2xl border border-[#E8DFC8] p-4 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center min-h-[500px] sm:min-h-[540px] relative shadow-inner">
-                {/* Center Book Spine Crease on Desktop */}
-                <div className="hidden md:block absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-gradient-to-b from-[#E8DFC8] via-[#C9B79C] to-[#E8DFC8] opacity-60 shadow-xs pointer-events-none" />
-
-                {/* Left Page: Polaroid / Video Frame */}
-                <div className="flex flex-col items-center justify-center">
-                  <div className="relative group w-full max-w-[320px] sm:max-w-[340px]">
-                    {/* Washi tape on top */}
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-28 h-6 washi-tape washi-tape-pink rounded-xs z-20 pointer-events-none shadow-xs" />
-
-                    {/* Polaroid Card with 3D Flip */}
-                    <div 
-                      onClick={() => handleFlip(currentMemory.id)}
-                      className="bg-white p-3.5 sm:p-4 pb-6 rounded-sm polaroid-shadow border border-[#E8DFC8] cursor-pointer transition-transform duration-300 hover:scale-[1.02] relative"
-                      style={{
-                        transform: `rotate(${currentMemory.rotation || -1.5}deg)`,
-                      }}
-                    >
-                      {!isCurrentFlipped ? (
-                        <>
-                          <div className="relative aspect-4/5 w-full bg-[#FAF7F2] rounded-xs overflow-hidden mb-3 border border-black/5 flex items-center justify-center">
-                            {currentMemory.mediaType === 'video' || currentMemory.videoUrl ? (
-                              <div className="relative w-full h-full bg-black">
-                                <video
-                                  src={currentMemory.videoUrl}
-                                  autoPlay={isVideoPlaying}
-                                  loop
-                                  muted={isVideoMuted}
-                                  playsInline
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute bottom-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-xs px-2 py-1 rounded-full text-white text-[10px]">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setIsVideoPlaying(!isVideoPlaying);
-                                    }}
-                                    className="p-1 hover:text-[#FFD166]"
-                                  >
-                                    {isVideoPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setIsVideoMuted(!isVideoMuted);
-                                    }}
-                                    className="p-1 hover:text-[#FFD166]"
-                                  >
-                                    {isVideoMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <img
-                                src={currentMemory.url}
-                                alt={currentMemory.caption}
-                                loading="lazy"
-                                onError={(e) => {
-                                  const target = e.currentTarget;
-                                  if (!target.dataset.fallbackTried) {
-                                    target.dataset.fallbackTried = 'true';
-                                    target.src = `./images/${currentMemory.id.replace('mem-', 'anu_')}.jpg`;
-                                  }
-                                }}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              />
-                            )}
-
-                            {/* Zoom button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                sound.playChime(450);
-                                setZoomedPhoto(currentMemory);
-                              }}
-                              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-black/75"
-                              title="Zoom view"
-                            >
-                              <ZoomIn className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
-                          <p className="font-handwriting text-xl text-[#2D2424] leading-tight font-medium text-center">
-                            {currentMemory.caption}
-                          </p>
-
-                          <div className="mt-2 flex items-center justify-between text-[11px] text-[#8B6E60]">
-                            <span>{currentMemory.date}</span>
-                            <span className="flex items-center gap-1 text-[#8B3A4D] font-medium">
-                              <RotateCw className="w-3 h-3" /> Tap to flip
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        /* Flipped secret note side */
-                        <div className="aspect-4/5 w-full bg-[#FAF0DC] rounded-xs p-5 flex flex-col justify-between border border-[#E9D9A5]">
-                          <div>
-                            <span className="text-[10px] uppercase tracking-widest text-[#8B3A4D] font-mono font-bold block mb-1">
-                              Keepsake Note
-                            </span>
-                            <h4 className="font-serif text-sm font-bold text-[#5B2333] mb-2">
-                              {currentMemory.caption}
-                            </h4>
-                            <p className="font-handwriting text-lg sm:text-xl text-[#2D2424] leading-relaxed">
-                              "{currentMemory.note}"
-                            </p>
-                          </div>
-
-                          <div className="flex items-center justify-between text-[11px] text-[#8B6E60] border-t border-[#E8DFC8]/70 pt-2">
-                            <span>📍 {currentMemory.location || 'College Days'}</span>
-                            <span className="text-[#8B3A4D] font-semibold">Flip front ↺</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+        {/* ============================================================== */}
+        {/* PRINCESS SITTING ON TOWER BALCONY (Artistic Fairytale Scene) */}
+        {/* ============================================================== */}
+        <div className="relative mb-6 flex flex-col items-center">
+          
+          {/* Princess in Tower Balcony Frame */}
+          <div className="w-full max-w-4xl bg-black/25 backdrop-blur-sm rounded-3xl p-4 sm:p-6 border border-white/20 shadow-2xl relative overflow-hidden flex flex-col items-center">
+            
+            {/* Balcony stone arch framing */}
+            <div className="absolute top-0 inset-x-0 h-3 bg-gradient-to-r from-[#D4AF37]/50 via-white/40 to-[#D4AF37]/50" />
+            
+            {/* The Princess sitting on the tower balcony with glowing book in hands */}
+            <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-4 relative z-10 px-2 sm:px-6">
+              
+              {/* Left Side: Princess Silhouette & Royal Presence */}
+              <div className="flex items-center gap-4">
+                {/* Princess Silhouette Figure */}
+                <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-b from-[#FFF2E2] via-[#F4D2D7] to-[#8B3A4D] p-1 shadow-[0_0_30px_rgba(255,209,102,0.6)] flex items-center justify-center shrink-0">
+                  <span className="text-4xl sm:text-5xl filter drop-shadow-md">
+                    👸🏻✨
+                  </span>
+                  {/* Floating Tiara & Stars */}
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-sm text-[#FFD166] animate-bounce">
+                    👑
                   </div>
                 </div>
 
-                {/* Right Page: Princess Story & Memory Reflection */}
-                <div className="flex flex-col justify-between h-full space-y-4 text-left">
-                  <div>
-                    <div className="flex items-center justify-between border-b border-[#E8DFC8] pb-2 mb-3">
-                      <span className="text-[10px] tracking-[0.25em] uppercase text-[#8B6E60] font-mono font-semibold">
-                        Page {currentPage + 1} of {memories.length}
-                      </span>
-                      <span className="text-xs font-serif italic text-[#8B3A4D] flex items-center gap-1">
-                        <Heart className="w-3.5 h-3.5 fill-current" />
-                        <span>Anuradha's Keepsake</span>
-                      </span>
-                    </div>
+                <div className="text-left">
+                  <div className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FFD166] tracking-wider uppercase">
+                    <span>Princess Anuradha's Sanctuary</span>
+                  </div>
+                  <h3 className="font-serif text-lg sm:text-2xl font-bold text-white leading-tight">
+                    High Tower Balcony
+                  </h3>
+                  <p className="text-xs text-white/80 max-w-xs mt-0.5">
+                    Surrounded by the sunset horizon, a glowing rainbow, and the midnight moon. Holding her precious album in hand.
+                  </p>
+                </div>
+              </div>
 
-                    <h3 className="font-display text-2xl sm:text-3xl text-[#2D2424] leading-tight">
-                      {currentMemory.caption}
-                    </h3>
+              {/* Right Side: Royal Album Invitation & Status */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    sound.playPaperRustle();
+                    setIsAlbumOpened(!isAlbumOpened);
+                  }}
+                  className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FFD166] to-[#F3C64F] hover:brightness-105 text-[#2D2424] font-bold text-xs sm:text-sm shadow-lg flex items-center gap-2 cursor-pointer transition-transform hover:scale-105"
+                >
+                  <BookOpen className="w-4 h-4 text-[#8B3A4D]" />
+                  <span>{isAlbumOpened ? 'Flip Pages in Album' : 'Open Album in Her Hand 📖'}</span>
+                </button>
+              </div>
+            </div>
 
-                    <div className="flex items-center gap-3 text-xs text-[#8B6E60] mt-1 mb-4">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {currentMemory.date}
-                      </span>
-                      {currentMemory.location && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5" />
-                          {currentMemory.location}
+            {/* Balcony Railing Balustrade Illustration */}
+            <div className="w-full mt-4 pt-3 border-t border-white/15 flex justify-around text-white/30 text-xs font-serif tracking-widest select-none">
+              <span>✦ STONE BALUSTRADE ✦</span>
+              <span className="hidden sm:inline">✦ ROYAL PALACE HORIZON ✦</span>
+              <span>✦ CELESTIAL VISTA ✦</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================== */}
+        {/* VIEW MODE 1: GRAND TWO-PAGE STORYBOOK ALBUM SPREAD */}
+        {/* Left: Polaroid Photo + Note | Right: Matching Video Clip + Note */}
+        {/* ============================================================== */}
+        {viewMode === 'album' && (
+          <AnimatePresence mode="wait">
+            {isAlbumOpened && (
+              <motion.div
+                key={currentPage}
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.35 }}
+                className="relative"
+              >
+                {/* Grand Royal Book Cover & Gilded Leather Rim */}
+                <div className="bg-[#241715] p-3 sm:p-6 rounded-3xl shadow-[0_30px_70px_rgba(0,0,0,0.85)] border-4 border-[#D4AF37]/70 relative">
+                  
+                  {/* Brass Corner Guards */}
+                  <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-[#FFD166]" />
+                  <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-[#FFD166]" />
+                  <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-[#FFD166]" />
+                  <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-[#FFD166]" />
+
+                  {/* Open Two-Page Parchment Spread */}
+                  <div className="bg-[#FAF7F0] rounded-2xl border border-[#E8DFC8] p-4 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10 items-stretch min-h-[520px] relative shadow-inner">
+                    
+                    {/* Center Spine Crease */}
+                    <div className="hidden md:block absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[3px] bg-gradient-to-b from-[#E8DFC8] via-[#B8A68B] to-[#E8DFC8] opacity-70 pointer-events-none" />
+
+                    {/* ==================================================== */}
+                    {/* LEFT PAGE: POLAROID PHOTO WITH 3D FLIP NOTE */}
+                    {/* ==================================================== */}
+                    <div className="flex flex-col items-center justify-between bg-[#FDFBF7] p-4 sm:p-5 rounded-xl border border-[#EDE4D0] shadow-xs">
+                      
+                      {/* Left Page Top Banner */}
+                      <div className="w-full flex items-center justify-between text-[11px] text-[#8B6E60] font-semibold tracking-wider uppercase mb-3 pb-2 border-b border-[#E8DFC8]/60">
+                        <span className="flex items-center gap-1 text-[#8B3A4D]">
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>Photo Memory {currentPage + 1}</span>
                         </span>
-                      )}
+                        <span className="text-black/50 font-serif italic">Tap photo to flip note ↻</span>
+                      </div>
+
+                      {/* Polaroid Frame */}
+                      <div className="relative group w-full max-w-[320px]">
+                        {/* Washi Tape */}
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-28 h-5 washi-tape washi-tape-pink rounded-xs z-20 pointer-events-none shadow-xs" />
+
+                        <div 
+                          onClick={() => handleFlip(currentMemory.id)}
+                          className="bg-white p-3.5 pb-5 rounded-sm polaroid-shadow border border-[#E8DFC8] cursor-pointer transition-transform duration-300 hover:scale-[1.02] relative"
+                          style={{
+                            transform: `rotate(${currentMemory.rotation || -1.5}deg)`,
+                          }}
+                        >
+                          {!isCurrentFlipped ? (
+                            <>
+                              {/* Photo Image */}
+                              <div className="relative aspect-4/5 w-full bg-[#FAF7F2] rounded-xs overflow-hidden mb-3 border border-black/5 flex items-center justify-center">
+                                <img
+                                  src={currentMemory.url}
+                                  alt={currentMemory.caption}
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    const target = e.currentTarget;
+                                    if (!target.dataset.fallbackTried) {
+                                      target.dataset.fallbackTried = 'true';
+                                      target.src = `./images/${currentMemory.id.replace('mem-', 'anu_')}.jpg`;
+                                    }
+                                  }}
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+
+                                {/* Zoom Button */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    sound.playChime(600);
+                                    setZoomedPhoto(currentMemory);
+                                  }}
+                                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer shadow-md"
+                                  title="Zoom photo"
+                                >
+                                  <ZoomIn className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+
+                              {/* Photo Caption & Metadata */}
+                              <div className="px-1">
+                                <p className="font-handwriting text-lg sm:text-xl text-[#2D2424] leading-tight">
+                                  {currentMemory.caption}
+                                </p>
+                                <div className="mt-1 flex items-center justify-between text-[11px] text-[#8B6E60]">
+                                  <span>{currentMemory.date}</span>
+                                  <span className="flex items-center gap-1 text-[#8B3A4D] font-bold">
+                                    <RotateCw className="w-3 h-3" />
+                                    <span>Read Note</span>
+                                  </span>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            /* Flip Side: Secret Story Note */
+                            <div className="aspect-4/5 w-full p-4 bg-[#FFFDF8] rounded-xs flex flex-col justify-between text-left border border-dashed border-[#8B3A4D]/30">
+                              <div>
+                                <div className="flex items-center justify-between pb-2 border-b border-[#E8DFC8]">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8B3A4D]">
+                                    Scrapbook Memory Note
+                                  </span>
+                                  <Heart className="w-3.5 h-3.5 text-[#8B3A4D]" />
+                                </div>
+                                <p className="font-handwriting text-base sm:text-lg text-[#3E2723] leading-relaxed mt-3">
+                                  "{currentMemory.note}"
+                                </p>
+                              </div>
+
+                              <div className="text-[10px] text-[#8B6E60] italic pt-2 border-t border-[#E8DFC8] flex items-center justify-between">
+                                <span>College Days to Now</span>
+                                <span>Tap to see photo ↻</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Flip Hint Button */}
+                      <button
+                        onClick={() => handleFlip(currentMemory.id)}
+                        className="mt-3 text-xs font-semibold text-[#8B3A4D] hover:text-[#5B2333] cursor-pointer flex items-center gap-1.5"
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                        <span>{isCurrentFlipped ? 'Flip Back to Photo' : 'Flip to Read Secret Note'}</span>
+                      </button>
                     </div>
 
-                    {/* Extended story / reflection */}
-                    <div className="bg-[#FFFDF8] p-4 sm:p-5 rounded-xl border border-[#E8DFC8] shadow-2xs">
-                      <p className="font-serif text-sm sm:text-base text-[#3A2D28] leading-[1.7] italic">
-                        "{currentMemory.note}"
-                      </p>
-                      <p className="font-handwriting text-xl text-[#8B3A4D] mt-3 text-right">
-                        — Forever cherished
-                      </p>
+                    {/* ==================================================== */}
+                    {/* RIGHT PAGE: COMPANION LIVE VIDEO CLIP & VIDEO NOTE */}
+                    {/* ==================================================== */}
+                    <div className="flex flex-col items-center justify-between bg-[#FDFBF7] p-4 sm:p-5 rounded-xl border border-[#EDE4D0] shadow-xs">
+                      
+                      {/* Right Page Top Banner */}
+                      <div className="w-full flex items-center justify-between text-[11px] text-[#8B6E60] font-semibold tracking-wider uppercase mb-3 pb-2 border-b border-[#E8DFC8]/60">
+                        <span className="flex items-center gap-1 text-[#2B609E]">
+                          <Play className="w-3.5 h-3.5" />
+                          <span>Live Video Clip in Motion</span>
+                        </span>
+                        <span className="text-black/50 font-serif italic">Memory Reel {currentPage + 1}</span>
+                      </div>
+
+                      {/* Video Player Frame with Controls */}
+                      <div className="w-full max-w-[340px] flex flex-col items-center">
+                        <div className="relative aspect-4/5 w-full bg-black rounded-lg overflow-hidden shadow-md border-2 border-[#D4AF37]/40 group">
+                          
+                          {currentMemory.videoUrl ? (
+                            <video
+                              src={getMediaUrl(currentMemory.videoUrl)}
+                              autoPlay={isVideoPlaying}
+                              loop
+                              muted={isVideoMuted}
+                              playsInline
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            /* Fallback in case video is still loading */
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-black/90 text-white p-4 text-center">
+                              <Play className="w-8 h-8 text-[#FFD166] mb-2 animate-bounce" />
+                              <p className="text-xs">Playing motion moment...</p>
+                            </div>
+                          )}
+
+                          {/* Floating Video Overlay Badge */}
+                          <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-full text-white text-[10px] font-semibold flex items-center gap-1 border border-white/20">
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                            <span>Live Clip</span>
+                          </div>
+
+                          {/* Bottom Player Controls */}
+                          <div className="absolute bottom-2 inset-x-2 flex items-center justify-between bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-xs border border-white/20">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setIsVideoPlaying(!isVideoPlaying)}
+                                className="p-1 hover:text-[#FFD166] cursor-pointer"
+                                title={isVideoPlaying ? 'Pause video' : 'Play video'}
+                              >
+                                {isVideoPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                              </button>
+
+                              <button
+                                onClick={() => setIsVideoMuted(!isVideoMuted)}
+                                className="p-1 hover:text-[#FFD166] cursor-pointer"
+                                title={isVideoMuted ? 'Unmute video' : 'Mute video'}
+                              >
+                                {isVideoMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+
+                            <span className="text-[10px] text-white/70 truncate max-w-[140px]">
+                              {currentMemory.videoCaption || 'Live Memory'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Dedicated Video Note Card */}
+                        <div className="w-full mt-3 p-3 bg-white rounded-lg border border-[#E8DFC8] shadow-xs text-left">
+                          <h4 className="font-serif text-xs font-bold text-[#2D2424] flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-[#FFD166]" />
+                            <span>{currentMemory.videoCaption || 'Seeing Her in Motion'}</span>
+                          </h4>
+                          <p className="font-handwriting text-sm text-[#4E342E] leading-relaxed mt-1">
+                            "{currentMemory.videoNote || 'Watching you smile in this clip brings back that joyful, effortless college warmth. You shine so naturally in every candid second, Anu.'}"
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Video Status Tag */}
+                      <div className="mt-2 text-[10px] text-[#8B6E60] font-sans">
+                        <span>Original Clip from Anuradha's Keepsake Reel</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Page Turner Controls */}
-                  <div className="pt-2 flex items-center justify-between gap-3">
+                  {/* ==================================================== */}
+                  {/* BOTTOM BOOK NAVIGATION BAR */}
+                  {/* ==================================================== */}
+                  <div className="mt-4 pt-3 border-t border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-3 text-white">
+                    {/* Previous Button */}
                     <button
                       onClick={prevPage}
-                      className="px-4 py-2 rounded-full bg-white hover:bg-[#F2ECE4] border border-[#E8DFC8] text-xs font-semibold text-[#2D2424] flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all"
+                      className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-xs font-semibold flex items-center gap-1.5 cursor-pointer border border-white/20 transition-all hover:scale-105"
                     >
                       <ChevronLeft className="w-4 h-4" />
-                      <span>Previous Page</span>
+                      <span>Previous Memory</span>
                     </button>
 
-                    <div className="flex gap-1 overflow-x-auto max-w-[140px] px-1 py-1">
+                    {/* Page Pill Indicators */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto max-w-[280px] sm:max-w-none py-1 px-2">
                       {memories.map((_, idx) => (
-                        <span
+                        <button
                           key={idx}
                           onClick={() => {
                             sound.playPaperRustle();
                             setCurrentPage(idx);
                           }}
-                          className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
-                            idx === currentPage ? 'w-5 bg-[#8B3A4D]' : 'bg-[#D6C7B2] hover:bg-[#8B6E60]'
+                          className={`w-6 h-6 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                            currentPage === idx
+                              ? 'bg-[#FFD166] text-[#2D2424] scale-110 shadow-md'
+                              : 'bg-white/15 text-white/80 hover:bg-white/30'
                           }`}
-                        />
+                        >
+                          {idx + 1}
+                        </button>
                       ))}
                     </div>
 
+                    {/* Next Button */}
                     <button
                       onClick={nextPage}
-                      className="px-4 py-2 rounded-full bg-[#8B3A4D] hover:bg-[#6F2B3B] text-white text-xs font-semibold flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all"
+                      className="px-4 py-2 rounded-full bg-[#FFD166] hover:bg-[#F3C64F] text-[#2D2424] text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-all hover:scale-105"
                     >
-                      <span>Next Page</span>
+                      <span>Next Memory</span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
+
+                {/* Continue to Next Chapter Button */}
+                {onNext && (
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={onNext}
+                      className="px-8 py-3 rounded-full bg-gradient-to-r from-[#FFD166] via-[#FFAE00] to-[#FFD166] text-[#2D2424] font-bold text-sm shadow-xl hover:scale-105 cursor-pointer transition-all border border-white/30 inline-flex items-center gap-2"
+                    >
+                      <span>Continue to A Song for Anu →</span>
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         )}
 
-        {/* VIEW MODE 2: ALL POLAROIDS GALLERY WALL OVERVIEW */}
+        {/* ============================================================== */}
+        {/* VIEW MODE 2: ALL POLAROIDS & VIDEOS GALLERY WALL */}
+        {/* ============================================================== */}
         {viewMode === 'wall' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mt-4">
             {memories.map((mem, idx) => {
               const isFlipped = !!flippedIds[mem.id];
               return (
-                <div
+                <div 
                   key={mem.id}
-                  className="relative group cursor-pointer transition-transform duration-300 hover:scale-[1.02]"
-                  style={{ transform: `rotate(${mem.rotation}deg)` }}
-                  onClick={() => {
-                    sound.playChime(450);
-                    setZoomedPhoto(mem);
-                  }}
+                  className="bg-white/95 backdrop-blur-md p-4 rounded-xl border border-white/30 shadow-xl transition-all hover:-translate-y-1.5 flex flex-col justify-between"
                 >
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-28 h-6 washi-tape washi-tape-pink rounded-xs z-20 pointer-events-none shadow-xs" />
+                  {/* Top Tape */}
+                  <div className="w-24 h-4 washi-tape washi-tape-pink mx-auto -mt-6 mb-2 rounded-xs" />
 
-                  <div className="bg-white p-4 pt-5 pb-5 rounded-sm polaroid-shadow border border-[#E8DFC8]/60 min-h-[380px] flex flex-col justify-between">
+                  {/* Media (Photo or Video preview) */}
+                  <div 
+                    onClick={() => handleFlip(mem.id)}
+                    className="cursor-pointer"
+                  >
                     {!isFlipped ? (
                       <>
-                        <div className="relative aspect-4/5 w-full bg-[#FAF7F2] rounded-xs overflow-hidden mb-3 border border-black/5 flex items-center justify-center">
+                        <div className="relative aspect-4/5 w-full bg-black/10 rounded-lg overflow-hidden mb-3">
                           <img
                             src={mem.url}
                             alt={mem.caption}
-                            referrerPolicy="no-referrer"
-                            loading="lazy"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              if (!target.dataset.fallbackTried) {
-                                target.dataset.fallbackTried = 'true';
-                                target.src = `./images/${mem.id.replace('mem-', 'anu_')}.jpg`;
-                              }
-                            }}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-cover"
                           />
-                          <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ZoomIn className="w-3.5 h-3.5" />
-                          </div>
+                          {mem.videoUrl && (
+                            <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 text-[#FFD166] text-[10px] font-bold flex items-center gap-1">
+                              <Play className="w-2.5 h-2.5" />
+                              <span>Video Included</span>
+                            </span>
+                          )}
                         </div>
-
-                        <div>
-                          <p className="font-handwriting text-xl text-[#2D2424] leading-tight font-medium">
-                            {mem.caption}
-                          </p>
-                          <div className="mt-2 flex items-center justify-between text-[11px] text-[#8B6E60]">
-                            <span>{mem.date}</span>
-                            <button
-                              onClick={(e) => handleFlip(mem.id, e)}
-                              className="text-[#8B3A4D] hover:underline cursor-pointer flex items-center gap-1 font-medium"
-                            >
-                              <RotateCw className="w-3 h-3" /> Flip note
-                            </button>
-                          </div>
-                        </div>
+                        <h4 className="font-serif text-sm font-bold text-[#2D2424]">
+                          {mem.caption}
+                        </h4>
+                        <p className="text-[11px] text-[#8B6E60] mt-0.5">
+                          {mem.date} · {mem.location || 'College'}
+                        </p>
                       </>
                     ) : (
-                      <div className="aspect-4/5 w-full bg-[#FAF0DC] rounded-xs p-4 flex flex-col justify-between border border-[#E9D9A5]">
-                        <div>
-                          <span className="text-[10px] uppercase tracking-widest text-[#8B3A4D] font-bold block mb-1">
-                            Story #{idx + 1}
-                          </span>
-                          <p className="font-handwriting text-lg text-[#2D2424] leading-relaxed">
-                            "{mem.note}"
-                          </p>
-                        </div>
-                        <button
-                          onClick={(e) => handleFlip(mem.id, e)}
-                          className="text-[#8B3A4D] font-semibold text-xs flex items-center gap-1 cursor-pointer"
-                        >
-                          <RotateCw className="w-3 h-3" /> View Photo
-                        </button>
+                      <div className="aspect-4/5 w-full p-4 bg-[#FAF7F0] rounded-lg border border-dashed border-[#8B3A4D]/40 flex flex-col justify-between text-left mb-3">
+                        <p className="font-handwriting text-base text-[#3E2723]">
+                          "{mem.note}"
+                        </p>
+                        <span className="text-[10px] text-[#8B6E60] font-sans">
+                          Tap to flip back ↻
+                        </span>
                       </div>
                     )}
                   </div>
+
+                  {/* Open in Storybook button */}
+                  <button
+                    onClick={() => {
+                      setCurrentPage(idx);
+                      setViewMode('album');
+                      setIsAlbumOpened(true);
+                      sound.playPaperRustle();
+                    }}
+                    className="mt-3 w-full py-1.5 rounded-lg bg-[#FAF0DC] hover:bg-[#F5E6CA] text-[#5B2333] text-xs font-semibold cursor-pointer border border-[#E8DFC8] flex items-center justify-center gap-1.5"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>View in Storybook Spread</span>
+                  </button>
                 </div>
               );
             })}
           </div>
         )}
 
-        {/* Continue to Chapter III: A Song for You */}
-        {onNext && (
-          <div className="mt-12 text-center">
-            <button
-              onClick={onNext}
-              className="px-7 py-3.5 rounded-full bg-white/90 hover:bg-white text-[#2D2424] font-semibold text-xs tracking-widest uppercase shadow-xl hover:shadow-2xl transition-all cursor-pointer inline-flex items-center gap-2 border border-white/50 backdrop-blur-md"
-            >
-              <span>Continue to A Song for Anu</span>
-              <span>→</span>
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Zoom Lightbox Modal */}
+      {/* ============================================================== */}
+      {/* ZOOMED PHOTO LIGHTBOX */}
+      {/* ============================================================== */}
       {zoomedPhoto && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+        <div 
           onClick={() => setZoomedPhoto(null)}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
         >
-          <div
-            className="bg-white p-5 sm:p-7 rounded-2xl max-w-2xl w-full border border-[#E8DFC8] shadow-2xl relative max-h-[95vh] overflow-y-auto"
+          <div 
             onClick={(e) => e.stopPropagation()}
+            className="max-w-xl w-full bg-white p-4 sm:p-6 rounded-2xl shadow-2xl relative"
           >
             <button
               onClick={() => setZoomedPhoto(null)}
-              className="absolute top-3 right-3 p-2 rounded-full text-[#6B5E59] hover:bg-[#F2ECE4] cursor-pointer"
+              className="absolute top-3 right-3 p-1.5 rounded-full bg-black/10 hover:bg-black/20 text-[#2D2424] cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="aspect-4/5 max-h-[60vh] w-full bg-[#FAF7F2] rounded-xl overflow-hidden mb-4 flex items-center justify-center">
-              {zoomedPhoto.mediaType === 'video' || zoomedPhoto.videoUrl ? (
-                <video
-                  src={zoomedPhoto.videoUrl}
-                  controls
-                  autoPlay
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <img
-                  src={zoomedPhoto.url}
-                  alt={zoomedPhoto.caption}
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    if (!target.dataset.fallbackTried) {
-                      target.dataset.fallbackTried = 'true';
-                      target.src = `./images/${zoomedPhoto.id.replace('mem-', 'anu_')}.jpg`;
-                    }
-                  }}
-                  className="w-full h-full object-contain"
-                />
-              )}
+            <div className="aspect-4/5 w-full bg-black rounded-lg overflow-hidden mb-3">
+              <img
+                src={zoomedPhoto.url}
+                alt={zoomedPhoto.caption}
+                className="w-full h-full object-contain"
+              />
             </div>
 
-            <div className="space-y-2">
-              <h3 className="font-handwriting text-2xl sm:text-3xl text-[#2D2424]">
-                {zoomedPhoto.caption}
-              </h3>
-              <p className="text-sm text-[#5B473F] bg-[#FAF7F2] p-3.5 rounded-xl border border-[#E8DFC8]/60 font-serif leading-relaxed">
-                "{zoomedPhoto.note}"
-              </p>
-              <div className="flex items-center justify-between text-xs text-[#8B6E60] pt-1">
-                <span>{zoomedPhoto.date}</span>
-                {zoomedPhoto.location && <span>📍 {zoomedPhoto.location}</span>}
-              </div>
-            </div>
+            <h3 className="font-serif text-lg font-bold text-[#2D2424]">
+              {zoomedPhoto.caption}
+            </h3>
+            <p className="text-xs text-[#6B5E59] mt-1 font-handwriting text-base">
+              "{zoomedPhoto.note}"
+            </p>
           </div>
         </div>
       )}

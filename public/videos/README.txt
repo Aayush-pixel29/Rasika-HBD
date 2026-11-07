@@ -21,3 +21,4 @@ You can drop any video files (.mp4, .webm, .mov) into this folder: `public/video
 }
 ```
 The album will automatically display an interactive video player with play/pause, loop, and full-screen view!
+
